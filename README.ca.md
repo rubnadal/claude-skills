@@ -2,7 +2,7 @@
 
 [English](README.md)
 
-Skills de [Claude Code](https://docs.claude.com/en/docs/claude-code) validades, destil·lades de projectes reals i distribuïdes com a marketplace de plugins. Cada regla d'aquestes skills va costar un error real; cada versió passa una porta de validació i l'informe es guarda en aquest repositori.
+Skills de [Claude Code](https://docs.claude.com/en/docs/claude-code) validades, destil·lades de projectes reals i distribuïdes com a marketplace de plugins. Cada regla d'aquestes skills prové d'un projecte real, i els punts deduïts o no resolts s'hi marquen com a tals; cada versió passa una porta de validació i l'informe es guarda en aquest repositori.
 
 ## Plugins
 
@@ -37,7 +37,7 @@ Abans d'etiquetar cada versió s'executa `tools/validate.sh <plugin>` en local. 
 
 No tots els casos mesuren la skill: a la 1.0.0, cinc casos també se superen sense el plugin (diferència 0), a més del cas d'activació negativa, on el 0 és l'esperat. Dos casos van treure un 0,5 amb el plugin (afegir una columna; tornar a executar el setup). Es mantenen com a comprovacions de regressió, i l'informe els mostra com a avisos.
 
-Per a la 1.0.0 també es va fer una **prova d'acceptació** puntual: dos agents nous, un amb el plugin i un sense, van construir la mateixa aplicació petita a partir del mateix encàrrec, i cada resultat es va revisar amb 15 regles de la skill. Amb el plugin: **15/15**; sense: **9/15** (entre altres coses, compartia el full de càlcul amb tots els usuaris, llegia les columnes per posició i confiava en el format `@` per evitar la injecció de fórmules).
+Per a la 1.0.0 també es va fer una **prova d'acceptació** puntual, amb la versió prèvia 0.9.0: dos agents nous, un amb el plugin i un sense, van construir la mateixa aplicació petita a partir del mateix encàrrec, i cada resultat es va revisar amb 15 regles de la skill. Amb el plugin: **15/15**; sense: **9/15** (entre altres coses, compartia el full de càlcul amb tots els usuaris, llegia les columnes per posició i confiava en el format `@` per evitar la injecció de fórmules).
 
 Informes: [`docs/validation/`](docs/validation/).
 

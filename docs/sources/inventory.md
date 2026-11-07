@@ -1009,7 +1009,7 @@ Areas: Security and public API · Architecture · Client · Testing · Gotchas �
 | sandbox-gas 13 per-page `applyI18n()` | R-86 | kept |
 | sandbox-gas 14 namespaced DOM ids | R-87 | kept |
 | gotchas A1 Premature close | R-156 | dropped (fixed upstream, version-specific) |
-| gotchas A2 Skipping push → `--force` | R-128 | kept |
+| gotchas A2 Skipping push → `--force` | R-128 | kept (A1 in 1.0.0) |
 | gotchas A3 `node --check` and `.gs` | R-110 | kept |
 | gotchas A4 push from the wrong directory | R-128, R-154 | kept |
 | gotchas A5 worktrees and clasp | R-131 | kept |

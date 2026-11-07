@@ -2,7 +2,7 @@
 
 [Català](README.ca.md)
 
-Validated [Claude Code](https://docs.claude.com/en/docs/claude-code) skills, distilled from real projects and distributed as a plugin marketplace. Every rule in a skill here cost a real bug; every release passes a validation gate whose report is kept in this repository.
+Validated [Claude Code](https://docs.claude.com/en/docs/claude-code) skills, distilled from real projects and distributed as a plugin marketplace. Every rule in a skill here comes from a real project, and inferred or unsettled points are marked as such; every release passes a validation gate whose report is kept in this repository.
 
 ## Plugins
 
@@ -35,7 +35,7 @@ Each release runs `tools/validate.sh <plugin>` locally before it is tagged. Ther
 
 Not every case measures the skill: in 1.0.0, five cases also pass without the plugin (delta 0), besides the negative activation case, where 0 is expected. Two cases scored 0.5 with the plugin (adding a column; re-running setup). They are kept as regression checks, and the report lists them as warnings.
 
-For 1.0.0 there was also a one-off **acceptance test**: two fresh agents, with and without the plugin, built the same small app from the same brief, and each result was checked against 15 rules of the skill. With the plugin: **15/15**; without it: **9/15** (it shared the spreadsheet with every user, used positional column indexes, trusted the `@` format against formula injection, among others).
+For 1.0.0 there was also a one-off **acceptance test**, run on the 0.9.0 pre-release build: two fresh agents, with and without the plugin, built the same small app from the same brief, and each result was checked against 15 rules of the skill. With the plugin: **15/15**; without it: **9/15** (it shared the spreadsheet with every user, used positional column indexes, trusted the `@` format against formula injection, among others).
 
 Reports: [`docs/validation/`](docs/validation/).
 
