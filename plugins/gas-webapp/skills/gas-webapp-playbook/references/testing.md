@@ -90,6 +90,8 @@ Only `SyntaxError` counts: runtime errors for missing GAS globals are expected, 
 
 **Manifest and forbidden APIs.** A Node test parses `appsscript.json` and asserts `executeAs`, `access` and the declared `oauthScopes`, and greps sources for forbidden calls: `addEditor`, `Session` outside the auth file, `window.location`, `history.pushState`.
 
+**Strip before you ban.** Run every ban regex (`window.location`, `addEditor`, backticks...) on source with comments and string literals removed (reuse `strip()` from `templates/public-surface.test.js`): a match in a comment fails the test for nothing, and one in a string hides nothing. Run the tests and read the output before saying they pass.
+
 **Client sandbox rules: ban, do not review.** Extract every `<script>` block from the `.html` files (replace `<?= ?>`/`<?!= ?>` scriptlets with a placeholder), compile each with `new vm.Script(code)` and fail on the constructs the project chose to ban (a choice recorded in the project's `CLAUDE.md`; for example any backtick), on `window.location`, `history.pushState`/`replaceState`, and on `localStorage` outside a `try`. A blunt ban is checkable; "at most two nesting levels" is not.
 
 **Lock discipline (heuristic).** Mark base writers (`appendRows_`, `updateRows_`, `deleteRows_`); a function that calls a writer outside an inline `withLock_(function () {…})` becomes a writer itself (repeat to a fixed point). Fail on a public function that writes outside a lock, and on a function that takes the lock (transitively) called inside a locked block. Document the limits in the test header (inline callbacks only, no dynamic calls, naive brace counting, explicit exemptions for setup and migrations) and plant a violation to prove the heuristic detects it.
