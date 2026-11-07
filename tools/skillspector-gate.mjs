@@ -14,10 +14,14 @@ export function evaluateScan(report, baseline) {
       reasons.push(`${i.severity} ${i.id} at ${i.location?.file}:${i.location?.start_line ?? '?'} — ${i.pattern}: ${i.finding}`);
     }
   }
-  if (BAD_RECOMMENDATION.test(ra.recommendation || '')) reasons.push(`recommendation is ${ra.recommendation}`);
+  if (!ra.recommendation) reasons.push('recommendation missing');
+  else if (BAD_RECOMMENDATION.test(ra.recommendation)) reasons.push(`recommendation is ${ra.recommendation}`);
   if (report.metadata?.llm_available !== true) reasons.push('LLM analysis was not available (set SKILLSPECTOR_PROVIDER=claude_cli)');
-  for (const a of report.analysis_completeness?.analyzer_statuses || []) {
-    if (a.analyzer_id.startsWith('semantic_') && a.status !== 'completed') reasons.push(`${a.analyzer_id} status ${a.status}`);
+  const statuses = report.analysis_completeness?.analyzer_statuses || [];
+  const semantic = statuses.filter((a) => String(a.analyzer_id ?? '').startsWith('semantic_'));
+  if (semantic.length === 0) reasons.push('no semantic analyzer ran');
+  for (const a of semantic) {
+    if (a.status !== 'completed') reasons.push(`${a.analyzer_id} status ${a.status}`);
   }
   const entries = baseline?.fingerprints || [];
   for (const e of entries) {
@@ -40,7 +44,14 @@ export function evaluateScan(report, baseline) {
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const [reportPath, baselinePath] = process.argv.slice(2);
   const report = JSON.parse(fs.readFileSync(reportPath, 'utf8'));
-  const baseline = baselinePath && fs.existsSync(baselinePath) ? JSON.parse(fs.readFileSync(baselinePath, 'utf8')) : null;
+  let baseline = null;
+  if (baselinePath) {
+    if (!fs.existsSync(baselinePath)) {
+      console.error(`baseline file not found: ${baselinePath}`);
+      process.exit(1);
+    }
+    baseline = JSON.parse(fs.readFileSync(baselinePath, 'utf8'));
+  }
   const res = evaluateScan(report, baseline);
   console.log(res.markdown);
   process.exit(res.pass ? 0 : 1);
