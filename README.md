@@ -31,9 +31,9 @@ Each release runs `tools/validate.sh <plugin>` locally before it is tagged. Ther
 
 1. **Structure.** `claude plugin validate` on the marketplace and the plugin; skill limits (`SKILL.md` ≤ 150 lines, description ≤ 1,024 characters), relative links that resolve, and a scan for private data (local paths, email addresses, script ids).
 2. **Security scan.** skillspector with its LLM analyzers: no HIGH or CRITICAL finding, and a recommendation other than CAUTION. gas-webapp 1.0.0: **recommendation SAFE, risk score 17 (LOW), three MEDIUM findings and none HIGH or CRITICAL**.
-3. **Behaviour.** 16 `claude plugin eval` cases, each run twice with the plugin and twice without it, graded by an LLM against concrete criteria. Every critical case must score 1 with the plugin, the overall score must be at least 0.8, and the mean difference against no plugin must be positive. gas-webapp 1.0.0: overall score **0.9375**, mean delta **+0.5625**, critical cases **8/8 at 1**.
+3. **Behaviour.** 16 `claude plugin eval` cases, each run twice with the plugin and twice without it, graded by an LLM against concrete criteria. Every critical case must score 1 with the plugin, the overall score must be at least 0.8, and the mean difference against no plugin must be positive. gas-webapp 1.0.0: overall score **1**, mean delta **+0.5625**, critical cases **8/8 at 1**.
 
-Not every case measures the skill: in 1.0.0, five cases also pass without the plugin (delta 0), besides the negative activation case, where 0 is expected. Two cases scored 0.5 with the plugin (adding a column; re-running setup). They are kept as regression checks, and the report lists them as warnings.
+Not every case measures the skill: in 1.0.0, four cases also pass without the plugin (delta 0), besides the negative activation case, where 0 is expected. They are kept as regression checks, and the report lists them as warnings.
 
 For 1.0.0 there was also a one-off **acceptance test**, run on the 0.9.0 pre-release build: two fresh agents, with and without the plugin, built the same small app from the same brief, and each result was checked against 15 rules of the skill. With the plugin: **15/15**; without it: **9/15** (it shared the spreadsheet with every user, used positional column indexes, trusted the `@` format against formula injection, among others).
 
