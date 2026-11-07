@@ -13,7 +13,7 @@ Reference architecture for a container-bound Apps Script web app that uses one G
 | Policy | Snapshot global policy into each resource at creation | Policy changes never apply retroactively. |
 | Identity model | Project decision | `references/security-and-api.md` §Identity. |
 
-- **Soft delete:** "delete" sets a status column; lists hide inactive records by default and offer a toggle to show them. Delete rows physically only for disposable data (queues, logs, drafts).
+- **Soft delete:** deleting a record only sets a status column; lists hide inactive records by default and offer a toggle to show them. Delete rows physically only for disposable data (queues, logs, drafts).
 - **Snapshot policy:** when a resource is created, copy the global settings it depends on (rounding mode, weights, permissions) into its own row, compute from that copy, and let only an admin edit it afterwards.
 
 ## Files
@@ -34,7 +34,7 @@ All sheet access goes through one file. Core rules (lowercase keys, writes by he
 | `appendRows_(sheet, objs)` | Row built from a header → index map; absent fields → `''`; one `setValues`. |
 | `updateRows_(sheet, filter, patch)` | Whole rows, one `setValues`. |
 | `deleteRows_(sheet, filter)` | Groups consecutive rows into one `deleteRows` call each. |
-| `invalidateCache_(sheet)` / `invalidateAllCaches_()` | Called by every writer; the "all" variant by resets, seeds and migrations. |
+| `invalidateCache_(sheet)` / `invalidateAllCaches_()` | Called by every writer; the all-sheets variant by resets, seeds and migrations. |
 
 - Never call `appendRow`/`deleteRow`/`setValue` in a loop: each costs 300–1000 ms.
 - Hand-built objects whose keys are not lowercase sheet headers are an exception; document it where they are built.

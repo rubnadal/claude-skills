@@ -12,8 +12,8 @@ Escaping of values placed in HTML, attributes and inline handlers lives in `refe
 3. Never wrap `${}` in single quotes inside a template literal (`onclick="fn('${id}')"`); build such attributes by concatenation.
 
 ```javascript
-// BAD
-el.innerHTML = `<ul>${items.map(i => `<li>${i.ok ? `<b>${i.v}</b>` : ''}</li>`)}</ul>`;
+// BAD (3 levels): a <ul> template literal whose ${} runs items.map(), which returns an <li> template literal
+// whose ${} holds a third template literal for the <b> cell. The GAS parser rejects this shape.
 // GOOD: precompute fragments, top-level row helper, concatenation
 function _rowHtml(i) { var v = i.ok ? '<b>' + _esc(i.v) + '</b>' : ''; return '<li>' + v + '</li>'; }
 ```

@@ -55,7 +55,7 @@ Symptom → cause → fix. Search this file for the exact error text or behaviou
 | A sheet fills itself before setup; a trigger or menu fails on a sheet a migration should have added | E5 |
 | Export to `.docx` does not work | E6 |
 | `doc.removeFooter is not a function` | E7 |
-| "Can't remove the last paragraph in the section" | E8 |
+| `Can't remove the last paragraph in the section` | E8 |
 | Every exported PDF has the first document's content; Docs creation quota exhausted | E9 |
 | QR code returns 404 or does not load on the target network | E10 |
 | `node --check File.gs` rejects the file | F1 |
@@ -157,7 +157,7 @@ Symptom → cause → fix. Search this file for the exact error text or behaviou
 **B3 — Text that Sheets converts**
 - **Symptom:** `'007'` reads back as `7`; a name `TRUE` as a boolean; `9:00` as `0.375`; a timestamp loses its time part after rows are appended past the original grid; a calendar link built from `8:10` gives `T81000`.
 - **Cause:** Sheets converts number-, boolean-, date- and time-looking strings unless the column is plain text; rows added by growing the grid (`insertRowsAfter`) do not inherit the column format; `'8:10'.replace(':', '') + '00'` has 5 digits.
-- **Fix:** keep a per-sheet list of columns to protect (codes with leading zeros, times, timestamps, free-text names, version strings, free config values) and apply `setNumberFormat('@')` before the first write: at creation, in each migration that adds such a column, and to new rows when the append helper grows the grid. Build compact times with `padStart(6, '0')`. A value already converted does not come back by itself. Do not paste by hand over text columns.
+- **Fix:** keep a per-sheet list of columns to protect (codes with leading zeros, times, timestamps, free-text names, version strings, free config values) and apply `setNumberFormat('@')` before the first write: at creation, in each migration that adds such a column, and to new rows when the append helper grows the grid. Read such codes back as strings (`String(v)`; a cell converted earlier returns a `Number`), never compare them as numbers. Build compact times with `padStart(6, '0')`. A value already converted does not come back by itself. Do not paste by hand over text columns.
 - **Confirmed:** 3/3
 
 **B4 — Booleans**
@@ -384,7 +384,7 @@ Symptom → cause → fix. Search this file for the exact error text or behaviou
 - **Confirmed:** 1/3
 
 **E8 — `body.clear()` throws**
-- **Symptom:** "Can't remove the last paragraph in the section".
+- **Symptom:** `Can't remove the last paragraph in the section`.
 - **Cause:** the body ends in a table or image.
 - **Fix:** append an empty paragraph at the end of any document you will reuse.
 - **Confirmed:** 1/3
