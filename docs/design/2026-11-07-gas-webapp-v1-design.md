@@ -46,7 +46,7 @@ claude-skills/
 │       └── CHANGELOG.md
 ├── tools/
 │   ├── validate.sh                        porta de publicació (§4)
-│   └── skillspector-baseline/<plugin>.json
+│   └── skillspector-baseline/<plugin>/<skill>.json
 ├── docs/
 │   ├── CONTRIBUTING.md                    (EN) format d'una entrada, com afegir una skill nova
 │   ├── design/                            aquest document i futurs dissenys
@@ -78,7 +78,7 @@ una, no es publica.
    `/Users/`).
 2. **skillspector** (`SKILLSPECTOR_PROVIDER=claude_cli`, analitzadors semàntics actius): cap troballa
    HIGH ni CRITICAL i recomanació final diferent de CAUTION. Les troballes acceptades com a falsos
-   positius van a `tools/skillspector-baseline/<plugin>.json`, cadascuna amb una justificació d'una
+   positius van a `tools/skillspector-baseline/<plugin>/<skill>.json`, cadascuna amb una justificació d'una
    línia. Punt de partida mesurat avui (skill 0.2.1, sense LLM): risc 37, MEDIUM, CAUTION, dues
    troballes HIGH `AE1` per anàlisi incompleta de fitxers referenciats.
 3. **`claude plugin eval`** amb `--ablation with-without` i `--max-cost-usd`: tots els escenaris crítics
@@ -140,6 +140,8 @@ Dos tipus: **activació** (corrector `tool_used: Skill`) i **aplicació** (corre
 concrets). El format exacte de `case.yaml` i dels correctors es verifica a la documentació de
 `claude plugin eval` en escriure el pla.
 
+Els escenaris crítics es diuen `critical-NN-<slug>` (la porta els identifica pel prefix) i la resta `case-NN-<slug>`.
+
 | # | Escenari | Crític |
 |---|---|---|
 | 1 | Afegir una funció de servidor per eliminar un usuari: sufix `_` a les internes, verificació de rol a la 1a línia, cap identitat per paràmetre | ✔ |
@@ -175,7 +177,7 @@ poden generar escenaris nous.
 
 **Versions:** semver per plugin. Patch = gotcha nou o correcció; minor = fitxer o secció nova; major =
 canvi de regla que contradiu versions anteriors. Cada versió: `CHANGELOG.md` + informe de validació +
-etiqueta `gas-webapp-vX.Y.Z`.
+etiqueta `gas-webapp--vX.Y.Z` (format de `claude plugin tag`, que comprova que `plugin.json` i el catàleg coincideixen).
 
 **Ordre de treball:**
 1. Esquelet del repo + `validate.sh` (comprovació d'estructura).
@@ -184,8 +186,10 @@ etiqueta `gas-webapp-vX.Y.Z`.
 4. Escenaris.
 5. `validate.sh` complet i correccions fins que passi.
 6. Prova d'acceptació.
-7. README EN/CA, CONTRIBUTING, etiqueta `gas-webapp-v1.0.0`.
+7. README EN/CA, CONTRIBUTING, etiqueta `gas-webapp--v1.0.0`.
 8. Transició.
+
+**Aïllament durant el desenvolupament:** abans de cap eval, la skill antiga es mou (no s'esborra) a `~/.claude/skills-backup/gas-webapp-playbook-0.2.1` i el plugin s'instal·la des del marketplace local, perquè cap execució carregui la 0.2.1 i falsegi la comparació amb/sense plugin. La prova d'acceptació sense plugin fa servir `--disable-slash-commands`.
 
 **Transició** (cada pas irreversible, amb confirmació explícita de l'autor):
 - Repo antic `gas-webapp-playbook`: desar el canvi pendent (`seguretat-api.md` §6) i pujar-lo amb el
