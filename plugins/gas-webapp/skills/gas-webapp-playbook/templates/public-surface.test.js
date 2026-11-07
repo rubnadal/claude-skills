@@ -8,6 +8,8 @@
 //
 // Fail-closed: if braces do not balance after stripping comments/strings (e.g. a regex
 // literal containing a quote), the file is reported and the test fails.
+// ALLOWED below is a placeholder: the test fails until every public function of
+// your project is classified in it.
 // To extend: add the name of each new public function to ALLOWED (entry points
 // and api* functions only). Internal helpers must end in "_" instead.
 // Usage: node public-surface.test.js [dir]   (default: current directory)
