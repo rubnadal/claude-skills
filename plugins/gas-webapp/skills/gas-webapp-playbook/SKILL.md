@@ -5,7 +5,7 @@ description: Use when starting, designing, reviewing or debugging a Google Apps 
 
 # GAS web app playbook
 
-Distilled from three production Google Apps Script web apps backed by Google Sheets (an assessment platform with four roles, a booking system with email and triggers, a mobile-first app with an anonymous public landing page). Every rule here cost a real bug; no domain logic is included.
+Distilled from three production Google Apps Script web apps backed by Google Sheets (an assessment platform with four roles, a booking system with email and triggers, a mobile-first app with an anonymous public landing page). Every rule here comes from a real project, and inferred or unsettled points are marked as such; no domain logic is included.
 
 **Principle: GAS rarely fails loudly.** A mistyped value, a call with fewer arguments, a `null` dropped in transit, an internal function that turns out to be callable from the browser, or a push from the wrong directory throws nothing: it silently does something else. The rules are preventive, not corrective.
 
@@ -28,7 +28,7 @@ Read only the file the task needs.
 ## Top rules
 
 1. **Only a trailing `_` hides a server function (3/3).** Every top-level `.gs` function whose name does not end in `_` is callable from any served page with `google.script.run`, whatever its parameters; a leading `_` hides nothing. Name internals `_name_()`; everything else makes the identity/role guard its **first statement** (before input checks, locks or reads), then validates every input on the server.
-2. **Public-surface test from the first commit (3/3).** A dependency-free Node test fails on any unclassified public function, on a guarded category missing its guard in the first lines, and on any client call to a non-public name. Adding it on day one is far cheaper than renaming dozens of functions later.
+2. **Public-surface test from the first commit (3/3).** A dependency-free Node test (`templates/public-surface.test.js`) scans the `.gs` files and fails on any public function missing from the whitelist and on any `api*` function whose first statement (also inside a leading `try {`) is not a guard. Per-category guards (menu handlers, editor-run) and client calls to non-public names are extensions your project adds to its copy. Adding it on day one is far cheaper than renaming dozens of functions later.
 3. **Choose the identity model with the user before writing backend code (3/3).** Model A (`USER_ACCESSING` + `DOMAIN`, session identity) or model B (`USER_DEPLOYING` + `ANYONE`, or `ANYONE_ANONYMOUS` only for anonymous public pages; session plus personal `?t=` link). Under A every user with file access can read every sheet, so pick B whenever users span domains or one role must not see another's data.
 4. **Identity is resolved on the server, by one function only (3/3).** The client never sends identity as an argument; `currentEmail_()` is the only reader of `Session.getActiveUser`, and a static test fails if any other file reads `Session.getActiveUser/getEffectiveUser`.
 5. **A role inside a resource queries every membership source (2/3).** Creator column → staff table → member table → any future membership table, each with an active check; add a new source in the same commit that introduces it. Reject read-only roles on the server (hidden buttons are not access control) and test each screen with a user holding only that role.

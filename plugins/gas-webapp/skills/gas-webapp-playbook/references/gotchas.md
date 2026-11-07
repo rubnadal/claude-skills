@@ -125,7 +125,7 @@ Symptom → cause → fix. Search this file for the exact error text or behaviou
 **A9 — `getUrl()` is `null` without a web-app deployment**
 - **Symptom:** a guided setup refuses or does nothing when run from the editor, but works from the web.
 - **Cause:** `ScriptApp.getService().getUrl()` is `null` until a web-app deployment exists; using it as a guard makes the function fail from the editor.
-- **Fix:** keep an unguarded editor setup next to the guided one, and document the difference.
+- **Fix:** keep an editor setup next to the guided one that does not depend on `getUrl()`, and document the difference. It is still public (editor-run functions cannot end in `_`), so it stays protected by the deployer check or the one-shot property (`references/security-and-api.md §Install and reset`).
 - **Confirmed:** 1/3
 
 **A10 — Only the deployer can open the app**

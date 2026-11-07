@@ -39,11 +39,13 @@ sed -n '2,99999p' html/screen-scripts.html | node --input-type=commonjs   # skip
 **Always evaluate as a template (top rule).** Serve every page, dialog, sidebar and include with `createTemplateFromFile(...).evaluate()`. `createHtmlOutputFromFile()` serves the file as-is and prints `<?!= include('x') ?>` literally. No "only evaluate if it contains `<?`" optimisation: it breaks nested includes and leaves blank pages.
 
 ```javascript
+var PARTIALS_ = ['html/layout-head', 'html/nav', 'html/screen-scripts'];   // every partial a page includes
 function include(filename) {
+  if (PARTIALS_.indexOf(filename) < 0) throw new Error('UNKNOWN_PARTIAL');
   return HtmlService.createTemplateFromFile(filename).evaluate().getContent();
 }
 ```
-`include` is a public entry point: classify it in the surface test (`references/security-and-api.md §Public surface`). When an include "does not work", first check how the `.gs` creates the output.
+`include` is a public, unguarded entry point: any visitor can call `google.script.run.include('anyView')`. Classify it in the surface test (`references/security-and-api.md §Public surface`), whitelist the partials it returns, and never put data-reading scriptlets in a partial: data reaches pages only through `doGet`'s context or guarded `api*` calls. A private `include_()` is an alternative only if you verify in your project that scriptlets can call `_`-suffixed functions. When an include "does not work", first check how the `.gs` creates the output.
 
 **A scripts file that already carries `<script>…</script>` is included bare:** `<?!= include('html/screen-scripts') ?>`. Wrapping it in another `<script>` yields `<script><script>`; the browser closes at the first `</script>` and all the JS is dead.
 

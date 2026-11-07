@@ -79,7 +79,7 @@ Top-level `const`/`let` in a `.gs` do not become context properties; another rea
 
 ## Static checks
 
-**Public surface.** A whitelist test over the server and client sources, from the first commit: `templates/public-surface.test.js`. What it checks and why: `references/security-and-api.md` §Public surface.
+**Public surface.** A whitelist test from the first commit: `templates/public-surface.test.js` scans the `.gs` files only and fails on any public function missing from `ALLOWED` and on any `api*` function whose first statement (directly or first inside a leading `try {`) is not a guard; unbalanced braces fail closed and stale whitelist entries are only warned. Extensions your project adds to its copy: per-category guards (menu handlers with `getUi()` on line one, editor-run functions) and a scan of the client sources for `google.script.run` calls to non-public names. What it checks and why: `references/security-and-api.md` §Public surface.
 
 **Syntax before every push.**
 ```bash

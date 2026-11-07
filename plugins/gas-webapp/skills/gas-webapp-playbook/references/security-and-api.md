@@ -21,17 +21,18 @@ So a data layer named `readRows`, `updateRow`, `deleteRow` is a direct backdoor 
 | Category | Examples | Guard in the first lines |
 |---|---|---|
 | Client API | `apiSaveRecord` | identity/role guard (`requireRole_(...)`) as the first statement, then input validation |
-| Entry point | `doGet`, `doPost`, `include`, `onOpen`, `rpc` | fixed names; `rpc` hardened (§Identity) |
+| Entry point | `doGet`, `doPost`, `include`, `onOpen`, `rpc` | fixed names; `rpc` hardened (§Identity); `include` returns only whitelisted partials (below) |
 | Unauthenticated endpoint | "send me my link" | rate-limited, identical answer in every case |
 | Menu handler | `menuOpenInstaller` | `SpreadsheetApp.getUi()` **on line one** |
-| Trigger handler | `onDailyDigest` | 0 parameters; harmless if a client calls it |
+| Trigger handler | `onDailyDigest` | 0 parameters; returns nothing, idempotent (marks rows sent), bounded by the quota reserve: under model B anyone signed in can call it repeatedly |
 | Editor-run function | template reset, demo data, repair, editor `test*` | one-shot property or admin guard (§Editor-run functions) |
 | Sheet-dialog function | installer dialog | one-time code minted by the menu (§Install and reset) |
 
 - **Menu handlers** must be public (menus call by name). `getUi()` only throws outside the sheet when it is reached, so it goes first, before any side effect. The surface template does not check this position: verify it in review (or add the check to your copy of the test).
 - Trigger, menu and entry-point names go in the `rpc` deny-list.
+- **`include` is unguarded:** any visitor can call `google.script.run.include('anyView')` (under model B, anyone signed in). Keep it public, but whitelist the partials it may return, and never put data-reading scriptlets in a partial: data reaches pages only through `doGet`'s context or guarded `api*` calls (`references/client-sandbox.md §Templates`).
 - **The "harmless" category is a near-empty exception list.** A function that reads any sheet, config key or property is not harmless (a "harmless" config reader once exposed the admin email), and a non-serialisable parameter is luck, not access control: rename it to `_` and fix the callers. Keep a category only for truly pure functions with no data access, each justified in the whitelist.
-- **Re-run the surface review after every feature that adds server code.** The test (`references/testing.md`, `templates/public-surface.test.js`) fails on public functions missing from the whitelist and on `api*` functions whose first statement is not a guard (stale entries are only warned).
+- **Re-run the surface review after every feature that adds server code.** The test (`references/testing.md`, `templates/public-surface.test.js`) fails on public functions missing from the whitelist and on `api*` functions whose first statement (directly or first inside a leading `try {`) is not a guard (stale entries are only warned).
 
 ### Renaming for visibility (2/3)
 

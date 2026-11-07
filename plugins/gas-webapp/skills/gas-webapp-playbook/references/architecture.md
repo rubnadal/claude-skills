@@ -187,7 +187,7 @@ Choose inline sending by default; use a queue when user actions trigger notifica
 
 **Time triggers**
 - One `manageTrigger_(enable)` deletes every trigger whose handler has the target name before creating a new one.
-- The handler keeps a stable public name (renaming it orphans the installed trigger), takes no parameters and is safe if a client calls it. Every reset deletes the trigger.
+- The handler keeps a stable public name (renaming it orphans the installed trigger), takes no parameters, returns nothing and is idempotent (marks each row sent) within the quota reserve, because under model B anyone signed in can call it repeatedly. Every reset deletes the trigger.
 - Hourly triggers are imprecise: select items whose target time falls within a tolerance wider than half the trigger period, and mark each row as sent, so overlapping runs never send twice.
 
 ## Persona
