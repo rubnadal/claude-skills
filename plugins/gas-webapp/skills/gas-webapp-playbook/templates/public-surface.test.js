@@ -3,8 +3,12 @@
 // Every top-level function whose name does NOT end in "_" can be called from
 // the browser with google.script.run. This test fails when:
 //   1. a public function is not in ALLOWED (unclassified leak), or
-//   2. an api* function does not start with a documented guard, or
-//   (stale ALLOWED entries are reported as warnings only.)
+//   2. an api* function does not start with a documented guard (directly, or as the
+//      first statement inside a leading `try {`).
+// Stale ALLOWED entries are reported as warnings only.
+// Scope: only .gs files; guards are checked only on api* functions. Per-category
+// guards (menu handlers, editor-run functions) and client calls to non-public
+// names are not checked: add them to your copy if your project needs them.
 //
 // Fail-closed: if braces do not balance after stripping comments/strings (e.g. a regex
 // literal containing a quote), the file is reported and the test fails.
@@ -21,7 +25,7 @@ const path = require('path');
 const ALLOWED = [
   'doGet',
   'doPost',
-  'include',
+  'include',   // public: only returns whitelisted partials; partials never read data (references/client-sandbox.md §Templates)
   'apiExample',
 ];
 
@@ -103,10 +107,14 @@ for (const f of files) {
       const open = rest.indexOf('{');
       const arrowExpr = !m[1] && /=>/.test(m[0]) && !/^\s*\{/.test(rest);
       const body = open < 0 || arrowExpr ? '' : rest.slice(open + 1);
-      const first = body.replace(/^\s*/, '');
+      // The guard may be the first statement inside a leading `try {` (the
+      // ok_/fail_ wrapper pattern of references/architecture.md §Public functions).
+      let first = body.replace(/^\s*/, '');
+      const tryOpen = /^try\s*\{\s*/.exec(first);
+      if (tryOpen) first = first.slice(tryOpen[0].length);
       const ok = GUARDS.some((g) => first.startsWith(g) ||
         new RegExp('^(var|let|const)\\s+[\\w$]+\\s*=\\s*' + g.replace('(', '\\(')).test(first));
-      if (!ok) errors.push(`${rel}: "${name}" must start with one of ${GUARDS.join(' ')}`);
+      if (!ok) errors.push(`${rel}: "${name}" must start with one of ${GUARDS.join(' ')} (directly or first inside a leading try {)`);
     }
   }
 }
