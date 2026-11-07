@@ -65,7 +65,7 @@ export function checkSkill(dir) {
     else if (fm.description.length > MAX_DESC)
       problems.push(`${skillPath}:1: description has ${fm.description.length} chars (max ${MAX_DESC})`);
   }
-  const lines = text.split('\n').length;
+  const lines = text.replace(/\n$/, '').split('\n').length;
   if (lines > MAX_LINES) problems.push(`${skillPath}: ${lines} lines (max ${MAX_LINES})`);
 
   for (const name of FORBIDDEN) {

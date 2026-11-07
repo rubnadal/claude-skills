@@ -37,6 +37,18 @@ test('SKILL.md de més de 150 línies', () => {
   assert.match(checkSkill(dir).join('\n'), /150/);
 });
 
+test('SKILL.md de exactament 150 línies (amb frontmatter i salt final) és vàlid', () => {
+  // FM ocupa 4 línies; 146 més = 150 en total, acabades en \n.
+  const dir = mkSkill({ 'SKILL.md': FM + 'l\n'.repeat(146) });
+  assert.equal(FM.split('\n').length - 1, 4);
+  assert.equal(checkSkill(dir).filter((p) => /lines/.test(p)).length, 0);
+});
+
+test('SKILL.md de 151 línies es rebutja amb el màxim de 150', () => {
+  const dir = mkSkill({ 'SKILL.md': FM + 'l\n'.repeat(147) });
+  assert.match(checkSkill(dir).join('\n'), /151 lines \(max 150\)/);
+});
+
 test('referència trencada i fitxer orfe', () => {
   const dir = mkSkill({
     'SKILL.md': FM + 'See `references/missing.md`.\n',
