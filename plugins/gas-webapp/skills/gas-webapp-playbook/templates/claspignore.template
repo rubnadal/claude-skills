@@ -1,0 +1,22 @@
+# Review this list: generic folder names (build/, dist/, site/) may match your own folders.
+**/.git/**
+**/.idea/**
+**/.vscode/**
+**/.claude/**
+**/.superpowers/**
+**/.worktrees/**
+**/worktrees/**
+**/node_modules/**
+**/dist/**
+**/build/**
+**/site/**
+**/docs/**
+**/tests/**
+**/graphify-out/**
+**/*.log
+**/*.md
+**/.DS_Store
+**/LICENSE
+**/.gitignore
+**/.gitlab-ci.yml
+**/mkdocs.yml
