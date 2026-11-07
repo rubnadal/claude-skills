@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Porta de publicació d'un plugin. Ús: tools/validate.sh <plugin> [--structure-only]
-# Variables: EVAL_RUNS (defecte 2), EVAL_MAX_COST (defecte 25)
+# Variables: EVAL_RUNS (defecte 2), EVAL_MAX_COST (defecte 25), EVAL_JUDGE (model jutge, defecte sonnet)
 set -uo pipefail
 PLUGIN="${1:?usage: tools/validate.sh <plugin> [--structure-only]}"
 MODE="${2:-full}"
@@ -31,7 +31,7 @@ for s in "$P"/skills/*/; do
 done
 
 echo "== 3/3 evals"
-claude plugin eval "$P" --trust-plugin --no-publish --judge-model sonnet --runs "${EVAL_RUNS:-2}" --threshold 0 \
+claude plugin eval "$P" --trust-plugin --no-publish --judge-model "${EVAL_JUDGE:-sonnet}" --runs "${EVAL_RUNS:-2}" --threshold 0 \
   --max-cost-usd "${EVAL_MAX_COST:-25}" --json "$TMP/evals.json" > "$TMP/evals.log" 2>&1
 node "$ROOT/tools/eval-gate.mjs" "$TMP/evals.json" > "$TMP/evals.md" || fail=1
 cat "$TMP/evals.md"
