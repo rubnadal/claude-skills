@@ -2,6 +2,8 @@
 
 Date: 2026-11-07 · Claude Code 2.1.319 · plugin `gas-webapp` (skill `gas-webapp-playbook`, version 0.9.0 installed)
 
+Run on the 0.9.0 build; 1.0.0 adds the pre-release fixes listed in the CHANGELOG (static-check guidance, template header, wording) and the version bump.
+
 Two fresh `claude -p` agents built the same mini-app from the same literal brief, each in an empty temporary directory outside the repo:
 
 > Build a minimal Google Apps Script web app backed by a Google Sheet, ready to push with clasp. Requirements: an `Items` sheet (id, name, active); an admin role; a page listing active items; one server function that lets an admin add an item; users come from two Google domains (the deployer's domain and an external one); a one-time setup that creates the sheets and the first admin. Put the code in this folder (`.gs`, `.html`, `appsscript.json`, `.claspignore`). Do not run clasp.

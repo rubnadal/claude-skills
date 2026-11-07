@@ -5,7 +5,7 @@ description: Use when starting, designing, reviewing or debugging a Google Apps 
 
 # GAS web app playbook
 
-Distilled from three production Google Apps Script web apps backed by Google Sheets (an assessment platform with four roles, a booking system with email and triggers, a public catalogue with an anonymous landing page). Every rule here cost a real bug; no domain logic is included.
+Distilled from three production Google Apps Script web apps backed by Google Sheets (an assessment platform with four roles, a booking system with email and triggers, a mobile-first app with an anonymous public landing page). Every rule here cost a real bug; no domain logic is included.
 
 **Principle: GAS rarely fails loudly.** A mistyped value, a call with fewer arguments, a `null` dropped in transit, an internal function that turns out to be callable from the browser, or a push from the wrong directory throws nothing: it silently does something else. The rules are preventive, not corrective.
 

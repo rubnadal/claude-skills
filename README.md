@@ -10,7 +10,7 @@ Validated [Claude Code](https://docs.claude.com/en/docs/claude-code) skills, dis
 |---|---|---|---|---|
 | [`gas-webapp`](plugins/gas-webapp/) | `gas-webapp-playbook` | Google Apps Script web apps with Google Sheets as the database: public server surface and identity models, data layer and cache, migrations and locks, the HtmlService client sandbox, Node testing, clasp workflow, and gotchas indexed by symptom | 1.0.0 | [report](docs/validation/gas-webapp-1.0.0.md) · [acceptance](docs/validation/gas-webapp-1.0.0-acceptance.md) |
 
-The `gas-webapp` knowledge comes from three real apps by the author: an assessment platform, a booking system and a mobile league app. Where each rule comes from is recorded in [`docs/sources/`](docs/sources/).
+The `gas-webapp` knowledge comes from three real apps by the author: an assessment platform, a booking system and a mobile-first app with an anonymous public landing page. Where each rule comes from is recorded in [`docs/sources/`](docs/sources/).
 
 ## Install
 

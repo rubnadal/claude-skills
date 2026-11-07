@@ -10,7 +10,7 @@ Skills de [Claude Code](https://docs.claude.com/en/docs/claude-code) validades, 
 |---|---|---|---|---|
 | [`gas-webapp`](plugins/gas-webapp/) | `gas-webapp-playbook` | Web apps de Google Apps Script amb Google Sheets com a base de dades: superfície pública del servidor i models d'identitat, capa de dades i memòria cau, migracions i bloquejos, el sandbox del client d'HtmlService, tests amb Node, flux de treball amb clasp i problemes coneguts indexats per símptoma | 1.0.0 | [informe](docs/validation/gas-webapp-1.0.0.md) · [acceptació](docs/validation/gas-webapp-1.0.0-acceptance.md) |
 
-El coneixement de `gas-webapp` prové de tres aplicacions reals de l'autor: una plataforma d'avaluació, un sistema de reserves i una aplicació mòbil de lliga. L'origen de cada regla és a [`docs/sources/`](docs/sources/).
+El coneixement de `gas-webapp` prové de tres aplicacions reals de l'autor: una plataforma d'avaluació, un sistema de reserves i una aplicació pensada per al mòbil amb una pàgina d'inici pública i anònima. L'origen de cada regla és a [`docs/sources/`](docs/sources/).
 
 Els informes i la skill són en anglès.
 
