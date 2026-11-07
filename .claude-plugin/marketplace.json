@@ -1,0 +1,14 @@
+{
+  "name": "claude-skills",
+  "description": "Validated Claude Code skills distilled from real projects.",
+  "owner": { "name": "Rubén Nadal", "url": "https://gitlab.com/rnadalb" },
+  "plugins": [
+    {
+      "name": "gas-webapp",
+      "source": "./plugins/gas-webapp",
+      "description": "Playbook for Google Apps Script web apps backed by Google Sheets: security, architecture, client sandbox, testing and gotchas.",
+      "category": "development",
+      "tags": ["google-apps-script", "google-sheets", "clasp", "web-app"]
+    }
+  ]
+}
