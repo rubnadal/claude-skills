@@ -70,6 +70,7 @@ function apiSaveItem(resourceId, payload) {
 }
 function ok_(data) { return { ok: true, data: data }; }
 function fail_(code) { return { ok: false, error: code }; }
+function coded_(code, message) { var e = new Error(message || code); e.code = code; return e; }  // throw coded_('NOT_AUTHORISED')
 ```
 
 - Client-called functions never throw to the client. They return `{ok:true, data}` or `{ok:false, error}` where `error` is a **stable code** that exists in every i18n dictionary; log the real message on the server.

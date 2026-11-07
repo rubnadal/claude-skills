@@ -31,7 +31,7 @@ So a data layer named `readRows`, `updateRow`, `deleteRow` is a direct backdoor 
 - **Menu handlers** must be public (menus call by name). `getUi()` only throws outside the sheet when it is reached, so it goes first, before any side effect; enforce the position in the surface test.
 - Trigger, menu and entry-point names go in the `rpc` deny-list.
 - **The "harmless" category is a near-empty exception list.** A function that reads any sheet, config key or property is not harmless (a "harmless" config reader once exposed the admin email), and a non-serialisable parameter is luck, not access control: rename it to `_` and fix the callers. Keep a category only for truly pure functions with no data access, each justified in the whitelist.
-- **Re-run the surface review after every feature that adds server code.** The test (`references/testing.md`, `templates/public-surface.test.js`) fails on unclassified functions, missing guards, stale whitelist entries and client calls to non-public names.
+- **Re-run the surface review after every feature that adds server code.** The test (`references/testing.md`, `templates/public-surface.test.js`) fails on public functions missing from the whitelist and on `api*` functions whose first statement is not a guard (stale entries are only warned).
 
 ### Renaming for visibility (2/3)
 
@@ -75,7 +75,7 @@ function currentEmail_() {
 }
 function requireUser_() {
   var e = currentEmail_();
-  if (!e) throw new Error('NOT_AUTHORISED');
+  if (!e) throw coded_('NOT_AUTHORISED');   // coded_: references/architecture.md §Public functions
   return e;
 }
 ```
