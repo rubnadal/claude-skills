@@ -62,7 +62,7 @@ return tpl.evaluate().addMetaTag('viewport', 'width=device-width, initial-scale=
 <head><base href="<?= baseUrl ?>" target="_top"></head>
 <script>window.APP_CONTEXT = <?!= context ?>;</script>
 ```
-Print JSON raw with `<?!= ?>`; never print JSON through `<?= ?>` and never mix the two forms for the same value. `<?= ?>` applies contextual escaping that transforms the output, so what arrives is not the object you serialised (mechanism unverified). Use `<?= ?>` only for plain text in HTML.
+Print JSON raw with `<?!= ?>`; never print JSON through `<?= ?>` and never mix the two forms for the same value. `<?= ?>` escapes for its context: inside `<script>` it prints a quoted JavaScript string (`'{\x22name\x22:…}'`), so `var ctx = <?= json ?>` gives a string, not an object; in HTML it prints entities (`&#34;`). `<?!= ?>` prints the JSON untouched, `</script>` included, which is why the server escapes `<` first. Use `<?= ?>` only for plain text in HTML. Verified on a real template.
 
 **Pages served outside the main layout** (registration, confirmation, error pages) must replicate the `<base href>`, the context injection and the language (§i18n).
 

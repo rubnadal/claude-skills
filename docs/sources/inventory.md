@@ -627,7 +627,7 @@ Areas: Security and public API · Architecture · Client · Testing · Gotchas �
 - **Destination:** SKILL.md (top rule)
 
 ### R-120 — Read booleans with one tolerant helper; never write a JS boolean to a text column
-- **Rule:** `v === true || (typeof v === 'string' && v.trim().toUpperCase() === 'TRUE')`, never `!== false` or truthiness; the write helper refuses a JS boolean for a `@` column. Hedged: what `@` does to `'true'` and to booleans is contradictory between observations (D-04), and the dual read works either way.
+- **Rule:** `v === true || (typeof v === 'string' && v.trim().toUpperCase() === 'TRUE')`, never `!== false` or truthiness; the write helper refuses a JS boolean for a `@` column. What `@` does was verified on a real sheet (D-04); the dual read still covers columns without `@` and older data.
 - **Confirmed:** 1/3 (BARRA-24; v0.2.1 gotchas B2, MPRO — contradictory observation)
 - **Destination:** references/gotchas.md §Sheets as a database
 
@@ -837,8 +837,8 @@ Areas: Security and public API · Architecture · Client · Testing · Gotchas �
 ### D-03 — Is there a "harmless" public category?
 - **Option A:** v0.2.1 allowed pure functions and functions with non-serialisable parameters as harmless. · **Option B:** treat "harmless" as near-empty: anything that reads a sheet, config key or property is not harmless, and a non-serialisable parameter is not a guard (ATECA found the admin email readable through a "harmless" config reader). **Decision: B.** A category may remain for truly pure functions with no data access, each justified in the whitelist. · **Sources:** ATECA-02, MPRO-34; v0.2.1 seguretat-api §1.
 
-### D-04 — What plain-text format `@` does (unverified)
-- **Option A:** v0.2.1 observed that writing `'true'` into an `@` column stores a native boolean, and MPRO observed that `@` did not stop `'9.7'` from becoming a date in a comma-decimal locale. · **Option B:** one Barralliure diagnostic on a real sheet observed `@` keeping strings exactly as written (`'TRUE'`, `'007'`, ISO dates) and a JS boolean stored as the string `'true'`. **Decision: unresolved, keep as an explicitly unverified note** (conditions such as locale, write method and when the format was applied may differ). Practice that is safe either way: write numbers as `Number`, never write a JS boolean to a text column, read booleans with the tolerant dual check (R-120), apply `@` before the first write, and never rely on `@` against formulas (R-26). · **Sources:** BARRA-24, MPRO-40; v0.2.1 gotchas B2.
+### D-04 — What plain-text format `@` does (verified 2026-11-07)
+- **Option A:** v0.2.1 observed that writing `'true'` into an `@` column stores a native boolean, and MPRO observed that `@` did not stop `'9.7'` from becoming a date in a comma-decimal locale. · **Option B:** one Barralliure diagnostic on a real sheet observed `@` keeping strings exactly as written (`'TRUE'`, `'007'`, ISO dates) and a JS boolean stored as the string `'true'`. **Verification (2026-11-07, new sheet, `ca_ES`, `setValues`, `@` applied before the write):** B is reproduced — `'true'`/`'TRUE'` stay strings, JS `true`/`false` become `'true'`/`'false'`, `'9.7'` stays the string `"9.7"`, a `Number` stays a `Number`; without `@`, `'true'` becomes a boolean and `'9.7'` a date. **Decision: B;** A's observations were not reproduced and their conditions are unknown. Practice that is safe either way: write numbers as `Number`, never write a JS boolean to a text column, read booleans with the tolerant dual check (R-120), apply `@` before the first write, and never rely on `@` against formulas (R-26). · **Sources:** BARRA-24, MPRO-40; v0.2.1 gotchas B2.
 
 ### D-05 — Which URL goes into `<base href>`
 - **Option A:** v0.2.1 kept `ScriptApp.getService().getUrl()` inside `doGet` for the base URL (it is `/dev` when the page is opened via `/dev`). · **Option B:** Barralliure once saw `getUrl()` return `/dev` for a page opened via `/exec` (exact trigger not established), which sent non-owners to an unopenable URL. **Decision: B, refined.** Capture the URL inside `doGet` only when it ends in `/exec`, store it, and use the stored public URL for `<base href>`, emails, menus and triggers; fall back to `getUrl()` only when nothing is stored. Cost: a developer testing on `/dev` follows links to `/exec`. · **Sources:** BARRA-26, BARRA-27, MPRO-43, ATECA-08; v0.2.1 gotchas D3b, sandbox-gas rule 9.
@@ -847,7 +847,7 @@ Areas: Security and public API · Architecture · Client · Testing · Gotchas �
 - **Option A:** v0.2.1 B4 normalised with `valor instanceof Date ? … : valor`. · **Option B:** under a Node `vm` harness `instanceof` on built-ins lies across realms. **Decision: B.** Detect dates with `Object.prototype.toString.call(v) === '[object Date]'` and arrays with `Array.isArray`, which behave the same in GAS and in tests. · **Sources:** BARRA-37, MPRO-36, ATECA-42; v0.2.1 gotchas B4.
 
 ### D-07 — Injecting server values into templates
-- **Option A:** one context object serialised with `JSON.stringify(...).replace(/</g, '\\u003c')` and printed raw with `<?!= ?>` (MPRO and Barralliure layouts; ATECA also does it for its token). · **Option B:** ATECA's restrictions doc says `JSON.stringify` "does not work" for strings and recommends `'<?= var ?>'`; ATECA's own layout mixes both forms. **Decision: A.** The ATECA note concerns `<?= ?>`: contextual escaping of `<?= ?>` transforms the output, so JSON printed through it is not the object you serialised (mechanism unverified); raw `<?!= ?>` of JSON whose `<` is escaped is the one form all three projects use. Never mix the two for the same value; use `<?= ?>` only for plain text in HTML. · **Sources:** ATECA-11, BARRA-19; v0.2.1 sandbox-gas rule 8; ATECA restrictions doc (not an inventory entry).
+- **Option A:** one context object serialised with `JSON.stringify(...).replace(/</g, '\\u003c')` and printed raw with `<?!= ?>` (MPRO and Barralliure layouts; ATECA also does it for its token). · **Option B:** ATECA's restrictions doc says `JSON.stringify` "does not work" for strings and recommends `'<?= var ?>'`; ATECA's own layout mixes both forms. **Decision: A.** The ATECA note concerns `<?= ?>`: contextual escaping of `<?= ?>` transforms the output, so JSON printed through it is not the object you serialised (verified 2026-11-07: inside `<script>` it prints a quoted JavaScript string, in HTML it prints entities); raw `<?!= ?>` of JSON whose `<` is escaped is the one form all three projects use. Never mix the two for the same value; use `<?= ?>` only for plain text in HTML. · **Sources:** ATECA-11, BARRA-19; v0.2.1 sandbox-gas rule 8; ATECA restrictions doc (not an inventory entry).
 
 ### D-08 — Where tests live
 - **Option A:** Node with `vm` and service mocks only (ATECA, Barralliure): runs locally and adds no public surface. · **Option B:** in-editor `test*` functions kept (MPRO): they ship to production as public functions, so each needs an admin guard, and the harness runs them against a baseline. **Decision: A for new projects; B only to adopt an existing editor test suite.** · **Sources:** MPRO-33, ATECA-41, BARRA-36; v0.2.1 arquitectura §Tests.
@@ -1099,7 +1099,7 @@ Duplicate clusters to merge into one place when writing the skill:
 
 Present as checklists rather than prose: R-54..R-57 (migrations), R-49 / R-64 / R-65 (wizards), R-66..R-70 (mail).
 
-Keep R-119's hedge sentence verbatim: "Behaviour of `@` with booleans is unsettled (D-04)."
+R-119's hedge on `@` with booleans was removed in 1.0.1 after D-04 was verified.
 
 ---
 

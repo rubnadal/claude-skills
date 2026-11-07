@@ -1,5 +1,13 @@
 # Changelog — gas-webapp
 
+## 1.0.1 — 2026-11-07
+
+Two hedged points verified on a real sheet and template, so their hedges are gone.
+
+- **Plain-text format `@`** (`references/gotchas.md` B2, B4). With `@` applied before the write, strings stay as written and a JS boolean is stored as the string `'true'`/`'false'`; without it, `'true'` becomes a boolean and, in a comma-decimal locale, `'9.7'` a date. `@` keeps `'9.7'` as text, so the fix for numbers is still to write a `Number`.
+- **`<?= ?>` with JSON** (`references/client-sandbox.md` §Templates). Inside `<script>`, `<?= ?>` prints a quoted JavaScript string, so the value arrives as a string, not an object; the rule (raw `<?!= ?>` with `<` escaped) is unchanged, now with the reason.
+- **`docs/CONTRIBUTING.md`.** No longer claims that every rule cost a bug; rules that come from a risk say so.
+
 ## 1.0.0 — 2026-11-07
 
 First validated release, and the first one distributed as a Claude Code plugin from the `claude-skills` marketplace.

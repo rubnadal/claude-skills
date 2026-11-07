@@ -150,8 +150,8 @@ Symptom → cause → fix. Search this file for the exact error text or behaviou
 
 **B2 — A decimal written as text becomes a date**
 - **Symptom:** a config value "is not saved": `<input type="number">` reloads blank; the cell holds 9 July (`'9.7'` → a date) and from then on even a number written there reads as a date (`9.5` → `8/1/1900`). Integers are unaffected, so a sibling field seems fine.
-- **Cause:** in a spreadsheet whose locale uses `,` as decimal separator, `setValues` of the string `'9.7'` is parsed as a date and the cell format switches to date. One project observed that plain-text format `@` did not prevent it.
-- **Fix:** write numbers as `Number`, never as strings; keep a list of numeric keys for key/value config and convert on every write path (save, migration helper, setup defaults). Repair cells with a numeric format (`0.####`) and reset values that became dates to their default; the original cannot be recovered reliably. Behaviour of `@` with booleans is unsettled.
+- **Cause:** in a spreadsheet whose locale uses `,` as decimal separator, `setValues` of the string `'9.7'` is parsed as a date and the cell format switches to date. A test on a real sheet (`ca_ES`, `setValues`, `@` applied before the write) kept `'9.7'` as the text `"9.7"`, which then reads back as a string, not a number; one project had earlier seen `@` fail to prevent the date, cause not established.
+- **Fix:** write numbers as `Number`, never as strings; keep a list of numeric keys for key/value config and convert on every write path (save, migration helper, setup defaults). Repair cells with a numeric format (`0.####`) and reset values that became dates to their default; the original cannot be recovered reliably. Plain-text format `@` is not the fix for a number: it keeps a string, and a `Number` written into an `@` column stays a `Number`.
 - **Confirmed:** 3/3
 
 **B3 — Text that Sheets converts**
@@ -162,9 +162,9 @@ Symptom → cause → fix. Search this file for the exact error text or behaviou
 
 **B4 — Booleans**
 - **Symptom:** an `active` flag is sometimes `true`, sometimes `'TRUE'` or `'true'`; filters disagree.
-- **Cause:** `getValues()` returns a boolean for a boolean cell and a string for imported or text cells. What `@` does to `'true'` and to booleans is contradictory between observations: one saw `'true'` in an `@` column stored as a native boolean, another saw `@` keep strings as written and a JS boolean stored as `'true'`.
+- **Cause:** `getValues()` returns a boolean for a boolean cell and a string for imported or text cells. Tested on a real sheet (`ca_ES`, `setValues`, `@` applied before the write): an `@` column keeps strings as written (`'true'`, `'TRUE'`) and stores a JS boolean as the string `'true'`/`'false'`; a column without `@` turns `'true'` and `'TRUE'` into the boolean `true`. An older observation of `'true'` becoming a boolean in an `@` column was not reproduced.
 - **Fix:** read every boolean with one helper: `v === true || (typeof v === 'string' && v.trim().toUpperCase() === 'TRUE')`, never `!== false` or truthiness; it works either way. Make the write helper refuse a JS boolean for an `@` column. Never rely on `@` against formulas (B9).
-- **Confirmed:** 1/3 (hedged, contradictory observations)
+- **Confirmed:** 1/3, plus a test on a real sheet
 
 **B5 — Dates**
 - **Symptom:** dates shift by one day; the same field is a `Date` on a cache miss and an ISO string on a cache hit; `google.script.run` returns `null` because the payload held a `Date`.

@@ -4,7 +4,7 @@ This repository is a Claude Code plugin marketplace (`claude-skills`). Each plug
 
 ## What a lesson looks like
 
-The skills here contain lessons, not tutorials: every rule cost a real bug in a real project. A new lesson starts as an inventory entry with four parts:
+The skills here contain lessons, not tutorials. Almost every rule comes from a bug seen in one of the source projects; the few that do not say so in their own wording (marked as a risk, or hedged). A new lesson starts as an inventory entry with four parts:
 
 - **Symptom:** what you see, in the words you would search for (exact error text if there is one).
 - **Cause:** why it happens.
