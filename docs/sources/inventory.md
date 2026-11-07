@@ -16,29 +16,29 @@ Areas: Security and public API · Architecture · Client · Testing · Gotchas �
 ## Security and public API
 
 ### R-01 — Only a trailing underscore hides a server function
-- **Rule:** Every top-level `.gs` function whose name does not end in `_` is callable from any served page with `google.script.run`, whatever its parameters; a leading `_` hides nothing. Internal functions end in `_` (`_name_()` reads as internal on both sides), and everything else needs an identity/role guard as its first statement.
+- **Rule:** Every top-level `.gs` function whose name does not end in `_` is callable from any served page with `google.script.run`, whatever its parameters; a leading `_` hides nothing. Internal functions end in `_` (`_name_()` reads as internal on both sides), and everything else needs an identity/role guard as its first statement and validates every input on the server (ids, numbers, allowed values, business rules — R-30).
 - **Confirmed:** 3/3 (MPRO-13, ATECA-01, BARRA-02, BARRA-04)
 - **Destination:** SKILL.md (top rule)
 
 ### R-02 — The "harmless" public category is a near-empty exception list
 - **Rule:** A public function is not harmless if it reads any sheet, config key or property, and a non-serialisable parameter is luck, not access control: rename it to `_` and fix the callers (see D-03). Re-run the public-surface review after every feature that adds server code.
 - **Confirmed:** 1/3 (ATECA-02; contradicts v0.2.1 seguretat-api §1)
-- **Destination:** references/security-and-api.md §1 What is public
+- **Destination:** references/security-and-api.md §Public surface
 
 ### R-03 — Classify every public function and check a guard per category
 - **Rule:** Each public function belongs to one category with its own first-lines guard: client API (identity/role guard), entry point (`doGet`, `doPost`, `include`, `onOpen`, `rpc`), unauthenticated endpoint (rate-limited, identical answer), menu handler (`SpreadsheetApp.getUi()` on line one), trigger handler (0 parameters, safe if a client calls it), editor-run function (one-shot property or admin guard), sheet-dialog function (one-time code). Trigger, menu and entry-point names go in the `rpc` deny-list.
 - **Confirmed:** 3/3 (MPRO-13, MPRO-34, ATECA-13, ATECA-26, ATECA-43, BARRA-03, BARRA-04)
-- **Destination:** references/security-and-api.md §1 What is public
+- **Destination:** references/security-and-api.md §Public surface
 
 ### R-04 — Menu handlers call `SpreadsheetApp.getUi()` on their first line
 - **Rule:** A menu handler must be public (menus call by name), and `getUi()` only throws outside the sheet when it is reached, so it goes first, before any side effect; enforce it in the surface test.
 - **Confirmed:** 1/3 (BARRA-03; v0.2.1 seguretat-api §1 table)
-- **Destination:** references/security-and-api.md §1 What is public
+- **Destination:** references/security-and-api.md §Public surface
 
 ### R-05 — Renaming for visibility: grep the client first, the docs after
 - **Rule:** Before renaming a function to `_`, grep every client file (if the client calls it, it needs a guard, not a rename); do large renames mechanically over the AST, then review strings that name functions (`addItem('…', 'handler')`, docs, diagnostic snippets). A trailing `_` also hides the function from the editor's Run menu.
 - **Confirmed:** 2/3 (MPRO-13, ATECA-01, ATECA-50)
-- **Destination:** references/security-and-api.md §1 What is public
+- **Destination:** references/security-and-api.md §Public surface
 
 ### R-06 — A public-surface test from the first commit
 - **Rule:** A dependency-free Node test fails on any public function that is not classified, on a guarded category without its guard in the first lines, and on any client call to a name that is not a public server function; adding it on day one is far cheaper than renaming dozens of functions later.
@@ -48,7 +48,7 @@ Areas: Security and public API · Architecture · Client · Testing · Gotchas �
 ### R-07 — Choose the identity model with the user before writing backend code
 - **Rule:** Decide model A (`USER_ACCESSING` + `DOMAIN`, session identity) or model B (`USER_DEPLOYING` + `ANYONE`/`ANYONE_ANONYMOUS`, session plus personal `?t=` link) at project start, using D-01 and D-02; under model A any user with file access can read every sheet, so pick B whenever users span domains or one role must not see another's data.
 - **Confirmed:** 3/3 (MPRO-01, ATECA-03, BARRA-01)
-- **Destination:** SKILL.md (top rule)
+- **Destination:** SKILL.md (top rule); also templates/appsscript.model-a.json, templates/appsscript.model-b.json
 
 ### R-08 — Identity is resolved on the server, by one function only
 - **Rule:** The client never sends identity as an argument; one function (`_currentEmail_()`) is the only reader of `Session.getActiveUser`, and a static test fails if any other `.gs` file reads `Session.getActiveUser/getEffectiveUser`.
@@ -58,67 +58,67 @@ Areas: Security and public API · Architecture · Client · Testing · Gotchas �
 ### R-09 — Per-execution identity lives in globals set at every entry point
 - **Rule:** GAS re-initialises top-level globals on each execution, so a token-derived identity can live in module globals filled only by one setter (which clears them first and accepts only active users), called at the start of `doGet` and inside `rpc`. Never persist identity in cache or properties keyed by anything the client controls.
 - **Confirmed:** 2/3 (MPRO-04, ATECA-03)
-- **Destination:** references/security-and-api.md §2 Identity
+- **Destination:** references/security-and-api.md §Identity
 
 ### R-10 — Model B: session email exists only for the deployer's domain
 - **Rule:** Under `USER_DEPLOYING`, `Session.getActiveUser().getEmail()` is `''` for accounts outside the deployer's domain, so resolution order is: session email of an active user → token fixed for this execution → raw session value (for the login screen). Derive the deployer's domain from `Session.getEffectiveUser()`; same-domain users never get a token injected.
 - **Confirmed:** 2/3 (MPRO-02, ATECA-03)
-- **Destination:** references/security-and-api.md §2 Identity
+- **Destination:** references/security-and-api.md §Identity
 
 ### R-11 — Under `USER_DEPLOYING`, the spreadsheet is shared with nobody
 - **Rule:** The app runs with the deployer's rights, so it never calls `addEditor`/`addViewer` and the install guide says never to share the file; a static test greps `.gs` for those calls and asserts `executeAs`/`access` in `appsscript.json`.
 - **Confirmed:** 1/3 (MPRO-01, MPRO-37)
-- **Destination:** references/security-and-api.md §2 Identity
+- **Destination:** references/security-and-api.md §Identity; also templates/appsscript.model-b.json
 
 ### R-12 — An empty identity never reaches a comparison
 - **Rule:** Every identity lookup returns "not authorised" when the trimmed email is empty, before reading any sheet; otherwise `''` matches a row with an empty email cell.
 - **Confirmed:** 1/3 (ATECA-05)
-- **Destination:** references/security-and-api.md §2 Identity
+- **Destination:** references/security-and-api.md §Identity
 
 ### R-13 — Normalise emails on every comparison and on write
 - **Rule:** One `_normEmail_()` (`toLowerCase().trim()`) applied to the session email, token keys, user lookups, duplicate detection, bulk recipient lists and before saving; compare normalised on both sides because legacy rows may hold mixed case.
 - **Confirmed:** 2/3 (MPRO-14, ATECA-25)
-- **Destination:** references/security-and-api.md §2 Identity
+- **Destination:** references/security-and-api.md §Identity
 
 ### R-14 — Reusable guards that throw, with a validated role hierarchy
 - **Rule:** Guards such as `_requireUser_()`, `_requireAdmin_()`, `_requireRole_([...])` or `checkAccess_(minRole, resourceId)` throw and return the email; an inactive user is not identified; the guard first throws if the requested role is not in the hierarchy array (`indexOf === -1` would let comparisons pass).
 - **Confirmed:** 2/3 (MPRO-16, ATECA-16)
-- **Destination:** references/security-and-api.md §2 Identity
+- **Destination:** references/security-and-api.md §Identity
 
 ### R-15 — Harden the `rpc` dispatcher like the arbitrary-call primitive it is
 - **Rule:** Refuse unless the name matches `^[A-Za-z][A-Za-z0-9_]*[A-Za-z0-9]$`, is not in the deny-list (`rpc`, `doGet`, `doPost`, menu and trigger handlers), is an own function of the global object and is not native (`Function.prototype.toString` without `[native code]`); non-array `args` → `[]`. A non-empty invalid token throws a stable code, never falls back to anonymous.
 - **Confirmed:** 3/3 (MPRO-05, ATECA-04, BARRA-03)
-- **Destination:** references/security-and-api.md §2 Identity
+- **Destination:** references/security-and-api.md §Identity
 
 ### R-16 — Personal-link tokens: format, storage, lifecycle
 - **Rule:** 32 lowercase hex from `Utilities.getUuid()`, format-checked before any lookup; a two-way map in script properties (`AUTH_T_<token>` → email, `AUTH_E_<email>` → token, ~130 bytes per user against the 500 KB limit), permanent until an admin regenerates; create/regenerate/delete under the script lock and delete on user deletion or email change.
 - **Confirmed:** 2/3 (MPRO-06, ATECA-03)
-- **Destination:** references/security-and-api.md §2 Identity
+- **Destination:** references/security-and-api.md §Identity
 
 ### R-17 — A distributable template carries no live credentials
 - **Rule:** The "prepare template" reset deletes every installation property including all token keys (iterate `getKeys()` by prefix) and every cache key, and a test asserts no token key survives.
 - **Confirmed:** 1/3 (MPRO-07)
-- **Destination:** references/security-and-api.md §6 Install and reset
+- **Destination:** references/security-and-api.md §Install and reset
 
 ### R-18 — App links: one builder, tokens only for active users, never on shared links
 - **Rule:** Build every link with one helper that reads the stored base URL (R-77) and appends `t=` only for an active user; send one email per recipient when the link is personal; QR codes, printed links and group notifications never carry a token. Tell users that a URL copied from the address bar carries their link, and give admins "regenerate".
 - **Confirmed:** 2/3 (ATECA-08, MPRO-06, MPRO-43)
-- **Destination:** references/security-and-api.md §2 Identity
+- **Destination:** references/security-and-api.md §Identity
 
 ### R-19 — "Send me my link": the only unauthenticated API, constrained
 - **Rule:** Always return the same answer (exists or not, throttled or not, invalid input or internal error); validate and length-cap the email; per-address throttle in `CacheService` and a global cap counted under the lock; send only to active users and reuse the existing token. Document the accepted residual risks (timing side channel, global-cap exhaustion) next to the code; see D-11 for removing the timing channel.
 - **Confirmed:** 3/3 (MPRO-10, ATECA-09, BARRA-05)
-- **Destination:** references/security-and-api.md §2 Identity
+- **Destination:** references/security-and-api.md §Identity
 
 ### R-20 — One-off emailed actions use single-use codes, not personal tokens
 - **Rule:** Issue a code stored with a timestamp and a fixed expiry, keep one live code per subject, sweep expired codes when minting, and require a confirmation click; never embed the approver's personal link.
 - **Confirmed:** 1/3 (ATECA-07)
-- **Destination:** references/security-and-api.md §3 Links that change data
+- **Destination:** references/security-and-api.md §Links that change data
 
 ### R-21 — A GET never changes data
 - **Rule:** A link that would change something opens a confirmation page that validates the id format, shows one generic message for "not yours / does not exist / no identity", and only for the owner offers a button that calls a guarded server function; email scanners prefetch links and an unguessable id is not authorisation.
-- **Confirmed:** 1/3 (ATECA-06; v0.2.1 seguretat-api §3)
-- **Destination:** references/security-and-api.md §3 Links that change data
+- **Confirmed:** 1/3 (ATECA-06; v0.2.1 seguretat-api §3) — exception to the ≥2/3 preference: security-critical and a v0.2.1 top rule (mail scanners prefetch links)
+- **Destination:** SKILL.md (top rule)
 
 ### R-22 — Role inside a resource: query every membership source; enforce read-only on the server
 - **Rule:** The role resolver checks creator column → staff table → member table → any future membership table, each with an active check, and a new source is added in the same commit that introduces it; read-only roles and historical modes are rejected by the server, because hidden buttons are not access control. Test each screen with a user holding only that role.
@@ -133,12 +133,12 @@ Areas: Security and public API · Architecture · Client · Testing · Gotchas �
 ### R-24 — Editor-run and destructive functions need a one-shot guard
 - **Rule:** Functions run from the editor cannot end in `_`, so guard each with a script property set to `'true'` by hand and deleted by the function on use (or an admin guard for editor test functions); this covers template reset, demo data and repair.
 - **Confirmed:** 2/3 (ATECA-13, MPRO-13)
-- **Destination:** references/security-and-api.md §5 Editor-run functions
+- **Destination:** references/security-and-api.md §Editor-run functions
 
 ### R-25 — Close the install window immediately
 - **Rule:** Between deploying (or a reset) and initialising, anyone who opens the URL may reach the installer: initialise immediately from the deploying account, before sharing the URL, or undeploy first.
 - **Confirmed:** 2/3 (ATECA-14, MPRO-08, MPRO-46)
-- **Destination:** references/security-and-api.md §6 Install and reset
+- **Destination:** references/security-and-api.md §Install and reset
 
 ### R-26 — Neutralise formulas on every write, including rewrites of read-back rows
 - **Rule:** Strings starting with `=`, `+`, `-` or `@` become formulas: reject them in short structured fields, prefix `'` in free text, and re-apply the neutraliser to every string cell when a row read with `getValues()` is written back (the apostrophe is not returned). Plain-text format `@` does not stop formulas.
@@ -153,32 +153,32 @@ Areas: Security and public API · Architecture · Client · Testing · Gotchas �
 ### R-28 — Inline-handler values: whitelist helper plus a scanning test
 - **Rule:** Every value concatenated into an `on…="…"` attribute passes through `_idJs(v)`; a test scans all such attributes and fails on any other expression, with a sanity floor on the number of handlers it saw; prefer delegated listeners with `data-*` for anything richer.
 - **Confirmed:** 1/3 (BARRA-06)
-- **Destination:** references/security-and-api.md §4 Input and output
+- **Destination:** references/security-and-api.md §Input and output
 
 ### R-29 — Admin-configurable URLs are validated on the server
 - **Rule:** A config URL that ends in an `href` is validated by the server before rendering (`http`/`https` only, no whitespace, quotes or angle brackets, bounded length; invalid → render nothing); the client check is only comfort. Extract the validator as a pure function and unit-test it.
 - **Confirmed:** 1/3 (ATECA-12)
-- **Destination:** references/security-and-api.md §4 Input and output
+- **Destination:** references/security-and-api.md §Input and output
 
 ### R-30 — Validate every input on the server
 - **Rule:** Ids are checked for format and existence (and ownership when acting on someone's record), numbers for type and range, qualitative values against the allowed list, and business rules (deadlines, limits, "only a finished period can be closed") on the server, not only in the form.
 - **Confirmed:** 2/3 (MPRO via v0.2.1 seguretat-api §4, ATECA-22)
-- **Destination:** references/security-and-api.md §4 Input and output
+- **Destination:** references/security-and-api.md §Input and output
 
 ### R-31 — Public payloads are tested with sentinel strings
 - **Rule:** Build fixtures with distinctive personal values and assert that the serialised public data contains none of them nor keys like `"email"`; strip ids the public view does not use and fail on any `null`/`undefined`.
 - **Confirmed:** 1/3 (BARRA-07)
-- **Destination:** references/security-and-api.md §7 Public pages
+- **Destination:** references/security-and-api.md §Public pages
 
 ### R-32 — Erasing a cell does not erase Drive version history
 - **Rule:** A "delete my data" feature cannot purge the spreadsheet's revision history; say so in the privacy notice or the admin's erasure procedure.
 - **Confirmed:** 1/3 (BARRA-09)
-- **Destination:** references/security-and-api.md §7 Public pages
+- **Destination:** references/security-and-api.md §Public pages
 
 ### R-33 — Per-visitor user storage under `USER_DEPLOYING` is unproven (hedged)
 - **Rule:** Hedged: one project abandoned a sign-in design built on `getUserProperties()` without recording why; do not build per-visitor state on user-scoped storage in a deployer-executed app before proving it with two accounts from different domains. The design that worked is script properties keyed by a server-resolved token (R-16).
 - **Confirmed:** 1/3 (ATECA-15, cause unverified)
-- **Destination:** references/security-and-api.md §2 Identity
+- **Destination:** references/security-and-api.md §Identity
 
 ---
 
@@ -332,7 +332,7 @@ Areas: Security and public API · Architecture · Client · Testing · Gotchas �
 ### R-63 — Public page data computed on the server and injected in one pass
 - **Rule:** One serialisable function builds everything a public page shows and `doGet` injects it into the context, avoiding a second round trip after the slow iframe load; test that it reads each big sheet only once.
 - **Confirmed:** 1/3 (BARRA-19)
-- **Destination:** references/security-and-api.md §7 Public pages
+- **Destination:** references/security-and-api.md §Public pages
 
 ### R-64 — Wizards with several steps
 - **Rule:** Never re-save a completed creation step; "back" reuses "go to step N"; a step that deletes saved items needs a real delete endpoint, lookup by identity and a double-click guard; anything that invalidates a later step marks it incomplete; switching a branching option clears the abandoned branch's data.
@@ -832,7 +832,7 @@ Areas: Security and public API · Architecture · Client · Testing · Gotchas �
 - **Option A:** `executeAs: USER_ACCESSING` + `access: DOMAIN`, identity from the session, the file shared with every user (when all users are in the deployer's Workspace domain **and** no role holds data another role must not read; the app's role checks are only presentation while users hold file access). · **Option B:** `executeAs: USER_DEPLOYING` + `access: ANYONE` (or `ANYONE_ANONYMOUS`, D-02), session email for same-domain users and a personal `?t=` link for everyone else, file shared with nobody (when users span domains or any data must be hidden from some role; MPRO moved from A to B for exactly this). Under B every public function runs with the deployer's rights, so R-01, R-06 and R-23 become mandatory before switching (R-143). · **Sources:** MPRO-01, MPRO-02, MPRO-45, ATECA-03, BARRA-01; v0.2.1 seguretat-api §2.
 
 ### D-02 — `access: ANYONE` vs `ANYONE_ANONYMOUS`
-- **Option A:** `ANYONE` ("anyone with a Google account") when there is no page for people without a Google account; it keeps a Google sign-in in front of everything and gives a session email to same-domain users (MPRO, ATECA). · **Option B:** `ANYONE_ANONYMOUS` only when a public page must open without any Google account; consequences: there is never a session email, every non-public request is identified by token only, the installer cannot rely on a deployer check (D-10), every unauthenticated endpoint is reachable by the whole internet (R-19 limits, R-31 sentinel test), and the publishing guide must say "do not pick *Anyone with a Google account*" in every UI language (BARRA). · **Sources:** MPRO-01, ATECA-03, BARRA-01, BARRA-02, BARRA-07.
+- **Option A:** `ANYONE` ("anyone with a Google account") when there is no page for people without a Google account; it keeps a Google sign-in in front of everything and gives a session email to same-domain users (MPRO, ATECA). · **Option B:** `ANYONE_ANONYMOUS` only when a public page must open without any Google account; consequences: a session email cannot be relied on, so identify every non-public request by token only; the installer cannot rely on a deployer check (D-10); anonymous traffic consumes the deployer's quotas (executions, mail, the global cap of R-19); under model B every unguarded public function is reachable by the whole internet, not only by Google-account holders (R-01, R-06, R-31 sentinel test); and the publishing guide must say "do not pick *Anyone with a Google account*" in every UI language (BARRA). · **Sources:** MPRO-01, ATECA-03, BARRA-01, BARRA-02, BARRA-07.
 
 ### D-03 — Is there a "harmless" public category?
 - **Option A:** v0.2.1 allowed pure functions and functions with non-serialisable parameters as harmless. · **Option B:** treat "harmless" as near-empty: anything that reads a sheet, config key or property is not harmless, and a non-serialisable parameter is not a guard (ATECA found the admin email readable through a "harmless" config reader). **Decision: B.** A category may remain for truly pure functions with no data access, each justified in the whitelist. · **Sources:** ATECA-02, MPRO-34; v0.2.1 seguretat-api §1.
@@ -847,7 +847,7 @@ Areas: Security and public API · Architecture · Client · Testing · Gotchas �
 - **Option A:** v0.2.1 B4 normalised with `valor instanceof Date ? … : valor`. · **Option B:** under a Node `vm` harness `instanceof` on built-ins lies across realms. **Decision: B.** Detect dates with `Object.prototype.toString.call(v) === '[object Date]'` and arrays with `Array.isArray`, which behave the same in GAS and in tests. · **Sources:** BARRA-37, MPRO-36, ATECA-42; v0.2.1 gotchas B4.
 
 ### D-07 — Injecting server values into templates
-- **Option A:** one context object serialised with `JSON.stringify(...).replace(/</g, '\\u003c')` and printed raw with `<?!= ?>` (MPRO and Barralliure layouts; ATECA also does it for its token). · **Option B:** ATECA's restrictions doc says `JSON.stringify` "does not work" for strings and recommends `'<?= var ?>'`; ATECA's own layout mixes both forms. **Decision: A.** The ATECA note concerns `<?= ?>`, which applies contextual escaping to its output, so printing JSON through it double-encodes; raw `<?!= ?>` of pre-escaped JSON is the one form confirmed in all three projects. Never mix the two for the same value; use `<?= ?>` only for plain text in HTML. · **Sources:** ATECA-11, BARRA-19; v0.2.1 sandbox-gas rule 8; ATECA restrictions doc (not an inventory entry).
+- **Option A:** one context object serialised with `JSON.stringify(...).replace(/</g, '\\u003c')` and printed raw with `<?!= ?>` (MPRO and Barralliure layouts; ATECA also does it for its token). · **Option B:** ATECA's restrictions doc says `JSON.stringify` "does not work" for strings and recommends `'<?= var ?>'`; ATECA's own layout mixes both forms. **Decision: A.** The ATECA note concerns `<?= ?>`: contextual escaping of `<?= ?>` transforms the output, so JSON printed through it is not the object you serialised (mechanism unverified); raw `<?!= ?>` of JSON whose `<` is escaped is the one form all three projects use. Never mix the two for the same value; use `<?= ?>` only for plain text in HTML. · **Sources:** ATECA-11, BARRA-19; v0.2.1 sandbox-gas rule 8; ATECA restrictions doc (not an inventory entry).
 
 ### D-08 — Where tests live
 - **Option A:** Node with `vm` and service mocks only (ATECA, Barralliure): runs locally and adds no public surface. · **Option B:** in-editor `test*` functions kept (MPRO): they ship to production as public functions, so each needs an admin guard, and the harness runs them against a baseline. **Decision: A for new projects; B only to adopt an existing editor test suite.** · **Sources:** MPRO-33, ATECA-41, BARRA-36; v0.2.1 arquitectura §Tests.
@@ -856,7 +856,7 @@ Areas: Security and public API · Architecture · Client · Testing · Gotchas �
 - **Option A:** allow `const`/`let`, arrows and template literals of one or two levels, following R-74 while writing (MPRO). · **Option B:** ban backticks completely and enforce it by test (Barralliure), because "max two levels" cannot be checked mechanically. **Decision: project choice, recorded in the project's `CLAUDE.md`;** if A, the rules are review-only and Node does not catch them; if B, enforce with R-109. · **Sources:** BARRA-41, ATECA-38; v0.2.1 sandbox-gas "What works".
 
 ### D-10 — Protecting the installer before installation
-- **Option A:** deployer check: the active session email equals the effective user (works under `ANYONE`, where the deployer has a session email). · **Option B:** a one-time code minted by the sheet menu (needs the open sheet), injected into the install dialog and checked before and inside the lock (required under `ANYONE_ANONYMOUS`, where there is no session email). · **Option C:** a one-shot script property set by hand (editor-run setup). **Decision:** A under `ANYONE`, B under `ANYONE_ANONYMOUS` or when the installer runs from a sheet dialog, C for editor-run destructive functions; in every case R-23 (not re-runnable) applies. · **Sources:** MPRO-08, MPRO-09, BARRA-02, ATECA-13, ATECA-14.
+- **Option A:** deployer check: the active session email equals the effective user (works under `ANYONE`, where the deployer has a session email). · **Option B:** a one-time code minted by the sheet menu (needs the open sheet), injected into the install dialog and checked before and inside the lock (required under `ANYONE_ANONYMOUS`, where a session email cannot be relied on). · **Option C:** a one-shot script property set by hand (editor-run setup). **Decision:** A under `ANYONE`, B under `ANYONE_ANONYMOUS` or when the installer runs from a sheet dialog, C for editor-run destructive functions; in every case R-23 (not re-runnable) applies. · **Sources:** MPRO-08, MPRO-09, BARRA-02, ATECA-13, ATECA-14.
 
 ### D-11 — Sending mail inline or through a queue
 - **Option A:** inline sending with quota check, cap and per-address outcome, for admin-initiated batches (MPRO, ATECA). · **Option B:** a queue sheet drained by a trigger, when user actions trigger notifications at volume, when the deployer has a small consumer quota, or to remove the timing side channel of an anonymous "send me my link" endpoint (Barralliure). **Decision:** A by default; B when any of those conditions holds. Both keep a quota reserve for admin alerts (R-67). · **Sources:** ATECA-25, MPRO-12, MPRO-10, BARRA-05, BARRA-13.
@@ -888,7 +888,7 @@ Areas: Security and public API · Architecture · Client · Testing · Gotchas �
 | SKILL top 12 `include()` always template | R-76 | updated (`createHtmlOutputFromFile`) |
 | SKILL top 13 synthetic `<a>` click, absolute `<base href>` | R-77 | updated (stored `/exec`, D-05) |
 | SKILL top 14 `clasp push --force` after `pwd` | R-128 | updated (redeploy the version) |
-| SKILL top 15 a GET never modifies data | R-21 | updated (no longer a top rule: 1/3; stays in the security reference) |
+| SKILL top 15 a GET never modifies data | R-21 | kept (top; 1/3 exception, security-critical) |
 | SKILL bootstrap 1 decide with the user first | R-139 | kept |
 | SKILL bootstrap 2 reference repos | R-155 | dropped (private local paths) |
 | SKILL bootstrap 3 CLAUDE.md from template | R-140 | kept |
@@ -1079,10 +1079,27 @@ Areas: Security and public API · Architecture · Client · Testing · Gotchas �
 
 Barralliure's file-split signal counts 12 of 45 entries for mobile + public landing + sheet-menu installer (mobile/iframe 6, landing 3, installer 3), plus 4 for the mail queue. Each group is small, all of them are 1/3 (Barralliure only), and several are hedged (BARRA-33 single-device measurements, BARRA-35 rationale without an incident). They become sections instead:
 - `references/client-sandbox.md` §Navigation (R-79, R-80, R-81) and §Mobile (R-100, R-101); device validation goes to `references/workflow.md` (R-149).
-- `references/security-and-api.md` §7 Public pages (R-31, R-32, R-63) and §6 Install and reset (installer protection, D-10); `ANYONE_ANONYMOUS` is D-02.
+- `references/security-and-api.md` §Public pages (R-31, R-32, R-63) and §Install and reset (installer protection, D-10); `ANYONE_ANONYMOUS` is D-02.
 - `references/architecture.md` §Migrations and setup (sheet-menu installer, R-59) and §Mail and triggers (queue, R-68 to R-70).
 
 Revisit if a second project confirms the mobile/landing group: at that point a `references/public-mobile.md` would be justified.
+
+---
+
+## Notes for the skill writers
+
+Duplicate clusters to merge into one place when writing the skill:
+- R-03 / R-04 / R-24 (public-function categories and their guards).
+- R-27 / R-28 / R-78 / D-07 (escaping and context injection).
+- R-104 / R-121 / D-06 — state the `instanceof` rule once, in R-121.
+- R-77 / D-05 / R-18 (stored `/exec` URL, base href, link builder).
+- R-108 / R-109 / R-81 (static bans on the client).
+- R-11 / R-125 (sharing the file: model B never, model A always).
+- R-131 / R-145 (worktrees and clasp) and R-128 / R-151 / R-154 (who pushes, from where, to which script).
+
+Present as checklists rather than prose: R-54..R-57 (migrations), R-49 / R-64 / R-65 (wizards), R-66..R-70 (mail).
+
+Keep R-119's hedge sentence verbatim: "Behaviour of `@` with booleans is unsettled (D-04)."
 
 ---
 
@@ -1090,7 +1107,7 @@ Revisit if a second project confirms the mobile/landing group: at that point a `
 
 - **Rules:** 157 `R-NN` (154 kept or hedged, 3 dropped); 13 `D-NN`.
 - **Per area:** Security and public API 33 · Architecture 40 · Client 28 · Testing 17 · Gotchas 20 · Workflow 16 · Dropped 3.
-- **Top rules:** 19, all confirmed in at least two projects: 14 at 3/3 (R-01, R-06, R-07, R-08, R-23, R-27, R-37, R-40, R-60, R-74, R-77, R-84, R-119, R-128) and 5 at 2/3 (R-22, R-26, R-36, R-55, R-76; R-36, R-55 and R-76 count MPRO through v0.2.1).
+- **Top rules:** 20: 14 at 3/3 (R-01, R-06, R-07, R-08, R-23, R-27, R-37, R-40, R-60, R-74, R-77, R-84, R-119, R-128) and 5 at 2/3 (R-22, R-26, R-36, R-55, R-76; R-36, R-55 and R-76 count MPRO through v0.2.1) and 1 stated exception at 1/3 (R-21, security-critical v0.2.1 top rule).
 - **Source entries:** MPRO 50/50, ATECA 52/52, BARRA 45/45 cited at least once.
 - **New vs v0.2.1:** MPRO 25 new, 13 partial (only the new part counted as new), 12 already covered; ATECA 15 new, 1 contradicting, 9 partial, 27 already covered; BARRA 30 new, 3 contradicting, 10 partial, 2 already covered.
 - **Hedged rules:** R-33 (ATECA-15), R-38 (ATECA-20), R-100 (BARRA-33), R-101 (BARRA-35), R-120 (BARRA-24 / D-04), R-132 (BARRA-20); none is a top rule.
