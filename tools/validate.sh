@@ -14,7 +14,7 @@ echo "== 1/3 Structure ($PLUGIN $VERSION)"
 claude plugin validate "$ROOT" || fail=1
 claude plugin validate "$P" || fail=1
 for s in "$P"/skills/*/; do node "$ROOT/tools/check-skill.mjs" "$s" || fail=1; done
-node "$ROOT/tools/check-skill.mjs" --private-only "$ROOT/docs/sources" "$ROOT/docs/validation" "$ROOT/docs/CONTRIBUTING.md" "$ROOT/README.md" "$ROOT/README.ca.md" "$P/evals" || fail=1
+node "$ROOT/tools/check-skill.mjs" --private-only "$ROOT/docs/sources" "$ROOT/docs/validation" "$ROOT/docs/CONTRIBUTING.md" "$ROOT/CLAUDE.md" "$ROOT/README.md" "$ROOT/README.ca.md" "$P/evals" || fail=1
 if [ "$fail" -ne 0 ]; then echo "Structure FAILED"; exit 1; fi
 if [ "$MODE" = "--structure-only" ]; then echo "Structure OK"; exit 0; fi
 
