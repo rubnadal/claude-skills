@@ -123,7 +123,7 @@ function saveBatch_(sheet, items, keyOf, prepare) {
   Single-record writers reuse the same `prepare` function, so the validation exists once. Measured: 10 rows saved and repainted in ~3.7 s instead of ~38 s with a per-row queue.
 - **The save returns what the screen repaints** (the refreshed form and any summary it shows), built with the same internal readers as the read APIs, so the client makes no reload call. Build that part inside a `try/catch` that yields `null`: a failure after the write must not be reported as "nothing saved". Repaint only when no item failed, so rows in error keep what the user typed.
 - **First-load data travels with the page** (`references/client-sandbox.md` §Templates): the page needs no call on load.
-- A read that misses the cache costs 0.4–2 s even for a small sheet, and each `CacheService.get` 15–250 ms; a call that reads ten cached sheets spends a few hundred milliseconds on cache reads alone.
+- A read that misses the cache costs 0.4–2 s even for a small sheet, and each `CacheService.get` 15–250 ms; a call that reads ten cached sheets can spend from 0.15 s to 2.5 s on cache reads alone.
 
 ## Concurrency
 

@@ -68,7 +68,7 @@ Print JSON raw with `<?!= ?>`; never print JSON through `<?= ?>` and never mix t
 
 ```javascript
 // server, before serialising ctx: same guard and shape as the client's call
-var res = apiGetSummary(projectId);
+var res = apiGetSummary(id);
 if (res && res.ok === true) ctx.initialData = { summary: withoutNullProps_(res) };  // a failure leaves the key absent
 ```
 ```javascript
@@ -83,7 +83,7 @@ if (inj) onSummary(inj); else google.script.run.withSuccessHandler(onSummary).wi
 ```
 - Inject only `ok: true` responses; the client's fallback call then handles every error exactly as before.
 - `withoutNullProps_` deep-copies the response without object properties whose value is `null`, because `google.script.run` drops them (§State and feedback) while `JSON.stringify` keeps them: both paths must deliver the same shape. Apply it only to the injected responses — other context fields may rely on `null`. Hedged: `null` inside arrays was not observed through `google.script.run`; arrays are left as they are.
-- The context's `<` escaping covers the injected data; the page arrives a few hundred milliseconds later but complete.
+- The context's `<` escaping covers the injected data. The page arrives later by the server time of those calls, but complete.
 
 **Pages served outside the main layout** (registration, confirmation, error pages) must replicate the `<base href>`, the context injection and the language (§i18n).
 

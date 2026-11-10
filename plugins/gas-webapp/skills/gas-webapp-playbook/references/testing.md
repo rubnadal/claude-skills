@@ -129,8 +129,8 @@ Object.defineProperty(fakeScript, 'run', { get() {
 Before optimising speed, measure which layer the time goes to (one app; `references/architecture.md` §Round trips). Keep the instrumentation on a branch that is never merged:
 - **Client:** a wrapper around `google.script.run` (a `Proxy` like the model B client in `references/client-sandbox.md`) that times each call from invocation to handler (round trip) and the handler itself (render), records click → screen ready across navigations in `localStorage`, and offers an on-screen report plus a "ping" button that makes N sequential calls to the cheapest API (the fixed cost per call).
 - **Server:** timers on every sheet read (cache or Sheets, rows, ms) and every write in the data layer, and a timing field added to every API response by the shared `ok_`/`fail_` wrapper, so round trip minus server time gives the platform overhead.
-- Measure on a temporary **versioned** deployment as well as `/dev`, with realistic data; delete the deployment afterwards and push the main branch back.
-- The timing field reveals which sheets the server reads: it must never reach the main branch. A test that requires an identical response (an unauthenticated endpoint) failing in that branch is the guard.
+- Measure on a temporary **versioned** deployment as well as `/dev`, with realistic data. Afterwards, delete the deployment and `clasp push` the main branch again, so the script no longer runs the instrumented code.
+- The timing field reveals which sheets the server reads: it must never reach the main branch. Keep a test that requires the exact response of an unauthenticated endpoint; it fails on purpose on the instrumentation branch, a reminder that the branch is never merged.
 
 ## Before every push
 

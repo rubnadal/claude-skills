@@ -916,9 +916,9 @@ Added in 1.1.0 from MPRO measurements (MPRO-51 to MPRO-57). All rules are 1/3 so
 ### D-13 — Exact vs tolerant header matching
 - **Option A:** exact matching of normalised header names (all three projects' data layers). · **Option B:** tolerant substring matching for headers a human typed (ATECA, after one unexplained production mismatch). **Decision: A for headers created by code; B only for human-maintained headers, as a hedged pattern** (R-38). · **Sources:** ATECA-20.
 
-
 ### D-14 — Bulk saves: sequential queue or one batch call
 - **Option A:** a client queue that calls the single-record save API once per record, in sequence (v0.2.1 convention, MPRO). · **Option B:** one call carrying the whole batch, prepared per item and written once under the lock, returning per-item results and the refreshed data (MPRO, 2026-11-10). **Decision: B by default** — A pays the fixed round-trip cost per record (measured ~38 s for 10 records against ~3.7 s for B). **A only** when each item is a long, independent operation that could push one execution past the 6-minute limit or must report progress item by item (e.g. sending mail or generating a document per record). · **Sources:** MPRO-52, MPRO-56; v0.2.1 arquitectura §Client conventions.
+
 ---
 
 ## v0.2.1 coverage
