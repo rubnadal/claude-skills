@@ -64,6 +64,27 @@ return tpl.evaluate().addMetaTag('viewport', 'width=device-width, initial-scale=
 ```
 Print JSON raw with `<?!= ?>`; never print JSON through `<?= ?>` and never mix the two forms for the same value. `<?= ?>` escapes for its context: inside `<script>` it prints a quoted JavaScript string (`'{\x22name\x22:…}'`), so `var ctx = <?= json ?>` gives a string, not an object; in HTML it prints entities (`&#34;`). `<?!= ?>` prints the JSON untouched, `</script>` included, which is why the server escapes `<` first. Use `<?= ?>` only for plain text in HTML. Verified on a real template.
 
+**First-load data in the context** (one app; `references/architecture.md` §Round trips). A screen that calls the server on load pays a second round trip (~1.7 s measured) after the page itself. Instead, the page-serving function calls the same public API functions the client would call and injects their responses:
+
+```javascript
+// server, before serialising ctx: same guard and shape as the client's call
+var res = apiGetSummary(projectId);
+if (res && res.ok === true) ctx.initialData = { summary: withoutNullProps_(res) };  // a failure leaves the key absent
+```
+```javascript
+// client: read once, fall back to the call
+function initialData(key) {
+  var d = window.APP_CONTEXT && window.APP_CONTEXT.initialData;
+  if (!d || !Object.prototype.hasOwnProperty.call(d, key)) return undefined;
+  var v = d[key]; delete d[key]; return v;
+}
+var inj = initialData('summary');
+if (inj) onSummary(inj); else google.script.run.withSuccessHandler(onSummary).withFailureHandler(onError).apiGetSummary(id);
+```
+- Inject only `ok: true` responses; the client's fallback call then handles every error exactly as before.
+- `withoutNullProps_` deep-copies the response without object properties whose value is `null`, because `google.script.run` drops them (§State and feedback) while `JSON.stringify` keeps them: both paths must deliver the same shape. Apply it only to the injected responses — other context fields may rely on `null`. Hedged: `null` inside arrays was not observed through `google.script.run`; arrays are left as they are.
+- The context's `<` escaping covers the injected data; the page arrives a few hundred milliseconds later but complete.
+
 **Pages served outside the main layout** (registration, confirmation, error pages) must replicate the `<base href>`, the context injection and the language (§i18n).
 
 ## Navigation
@@ -181,7 +202,8 @@ google.script.run
 **Lazy-load failures.** On error keep the store `null`, show an error with a retry button, and record "last attempt failed" separately, so re-renders neither re-fire the call in a loop nor cache the failure as "loaded, empty".
 
 **Conventions:**
-- A global save bar for pending changes, with row actions disabled meanwhile; bulk saves run as a sequential queue.
+- A global save bar for pending changes, with row actions disabled meanwhile; "save all" sends every changed row in one batch call and applies the per-row results (`references/architecture.md` §Round trips; a sequential per-row queue only for long per-item jobs).
+- When pending edits are saved automatically before moving to another item and the whole save fails (network, busy lock), stay on the screen with the rows marked in error: navigating would discard what the user typed. Per-row failures may navigate as before.
 - Read-only modes hide controls by attribute; the server rejects the writes anyway (`references/security-and-api.md §Identity`, role inside a resource).
 - Every error path restores the loading placeholder.
 - Human-only derived values (fractions shown as %) exist only in the UI; stored values stay untouched.

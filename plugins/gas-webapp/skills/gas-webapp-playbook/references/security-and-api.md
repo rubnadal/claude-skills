@@ -159,6 +159,8 @@ Apply it to template reset, demo data and repair. Editor `test*` functions shipp
 
 **Validate every input on the server (2/3):** ids for format and existence (and ownership when acting on someone's record), numbers for type and range, qualitative values against the allowed list, and business rules (deadlines, limits, "only a finished period can be closed") — not only in the form.
 
+**Lookup maps of allowed ids have no prototype** (one app, found in review): when you validate client ids against a map built from the sheet, build it with `Object.create(null)` or test with `Object.prototype.hasOwnProperty.call(map, id)`. With a plain `{}`, `map['toString']` is truthy, and an id of `toString` passed the check and wrote a row.
+
 **Formula injection (2/3):** strings starting with `=`, `+`, `-` or `@` become formulas. Reject them in short structured fields; prefix `'` in free text; re-apply the neutraliser to every string cell of a row read with `getValues()` before writing it back (the apostrophe is not returned). Plain-text format `@` does not stop formulas.
 
 ```javascript

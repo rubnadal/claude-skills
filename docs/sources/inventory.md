@@ -9,7 +9,7 @@ How to read it:
 - Contradictions are never resolved silently: each one is a `D-NN` in "Decisions" and the affected rules point to it.
 - Domain words are generalised: "record", "resource" (the entity users are members of), "membership table".
 
-Areas: Security and public API · Architecture · Client · Testing · Gotchas · Workflow.
+Areas: Security and public API · Architecture · Client · Testing · Gotchas · Workflow · Performance (added in 1.1.0).
 
 ---
 
@@ -504,7 +504,7 @@ Areas: Security and public API · Architecture · Client · Testing · Gotchas �
 - **Destination:** references/client-sandbox.md §DOM and CSS
 
 ### R-97 — Client conventions carried over from v0.2.1
-- **Rule:** A global save bar for pending changes with row actions disabled meanwhile; read-only modes hide controls by attribute and the server rejects writes (R-22); every error path restores the placeholder; human-only derived values (fractions shown as %) exist only in the UI; bulk saves run as a sequential queue; a living style document updated in the same commit as a new visual pattern.
+- **Rule:** A global save bar for pending changes with row actions disabled meanwhile; read-only modes hide controls by attribute and the server rejects writes (R-22); every error path restores the placeholder; human-only derived values (fractions shown as %) exist only in the UI; bulk saves follow D-14 (one batch call by default; until 1.0.1 this read "run as a sequential queue"); a living style document updated in the same commit as a new visual pattern.
 - **Confirmed:** 1/3 (v0.2.1 arquitectura §Client conventions, MPRO)
 - **Destination:** references/client-sandbox.md §State and feedback
 
@@ -807,6 +807,55 @@ Areas: Security and public API · Architecture · Client · Testing · Gotchas �
 
 ---
 
+## Performance
+
+Added in 1.1.0 from MPRO measurements (MPRO-51 to MPRO-57). All rules are 1/3 so far.
+
+### R-158 — Design screens by round trips
+- **Rule:** Each `google.script.run` call and each `?page=` navigation has a fixed cost of seconds (measured ~1.7 s per call and ~2.5 s per navigation, against tens of milliseconds of server code), so count round trips per user action: one call per action, none on page load when the data can travel with the page (R-161). Measure an empty call first; nothing inside Apps Script removes that floor.
+- **Confirmed:** 1/3 (MPRO-51)
+- **Destination:** SKILL.md (top rule, stated exception at 1/3); references/architecture.md §Round trips
+
+### R-159 — A save-all action is one batch call
+- **Rule:** Send every changed record in one call. The server splits each save into prepare (validate and compute, no write) and write; prepares each item in its own `try/catch`; rejects a key repeated in the batch; writes once (`updateRows_` + `appendRows_`) under the lock (R-163); returns one result per item so the client keeps per-row errors. Single-record writers reuse the same prepare function. See D-14 for when a sequential queue is still right.
+- **Confirmed:** 1/3 (MPRO-52)
+- **Destination:** references/architecture.md §Round trips
+
+### R-160 — The save returns the refreshed data
+- **Rule:** The save API returns what the screen repaints, built with the same internal readers as the read APIs, inside a `try/catch` that yields `null` so a failure after the write is not reported as "nothing saved"; the client repaints only when no item failed and never issues reload calls after saving.
+- **Confirmed:** 1/3 (MPRO-53)
+- **Destination:** references/architecture.md §Round trips
+
+### R-161 — First-load data travels inside the page
+- **Rule:** The page-serving function calls the same public API functions the client calls on load (same guard, same shape) and injects only `ok: true` responses into the context (`initialData[key]`); a failure leaves the key absent. The client reads each key once and falls back to its call when the key is absent. The existing `<` escaping of the context covers it.
+- **Confirmed:** 1/3 (MPRO-54)
+- **Destination:** references/client-sandbox.md §Templates
+
+### R-162 — Injected data has the shape `google.script.run` would deliver
+- **Rule:** Strip `null`/`undefined` object properties from injected API responses (arrays untouched), and only from those, so both paths deliver the same shape. Hedged: arrays holding `null` were not observed through `google.script.run`.
+- **Confirmed:** 1/3 (MPRO-55)
+- **Destination:** references/client-sandbox.md §Templates
+
+### R-163 — Every writer to a sheet that some path rewrites whole takes the same lock
+- **Rule:** `updateRows_` rewrites the whole sheet and `appendRows_` picks its row with `getLastRow()`, so single-row writers to the same sheet take the same script lock as batch writers. Inside the lock, read the sheets you prepare from directly from Sheets, skipping `CacheService` (an unlocked reader can put a stale copy back after an invalidation), and keep the result in the per-execution memo.
+- **Confirmed:** 1/3 (MPRO-56; refines R-60 and R-61)
+- **Destination:** references/architecture.md §Concurrency
+
+### R-164 — Allowed-id lookup maps have no prototype
+- **Rule:** Build maps of allowed ids with `Object.create(null)` or test membership with `hasOwnProperty`: with `{}`, an id such as `toString` passes the check.
+- **Confirmed:** 1/3 (MPRO-56)
+- **Destination:** references/security-and-api.md §Input and output
+
+### R-165 — A failed automatic save before navigating keeps the user on the screen
+- **Rule:** When a screen saves pending edits automatically before moving to another item and the whole save fails, it stays where it is with the rows in error; per-row failures may still navigate as before.
+- **Confirmed:** 1/3 (MPRO-56)
+- **Destination:** references/client-sandbox.md §State and feedback
+
+### R-166 — Measure latency with an instrumentation branch that is never merged
+- **Rule:** Wrap `google.script.run` on the client to time each call and each click-to-ready navigation, time every sheet read and write on the server, add a timing field to every API response, measure on a temporary versioned deployment and delete it afterwards. The timing field reveals which sheets the server reads, so it never reaches the main branch.
+- **Confirmed:** 1/3 (MPRO-57)
+- **Destination:** references/testing.md §Measuring latency
+
 ## Dropped
 
 ### R-155 — Reference repositories on the author's machine
@@ -867,6 +916,9 @@ Areas: Security and public API · Architecture · Client · Testing · Gotchas �
 ### D-13 — Exact vs tolerant header matching
 - **Option A:** exact matching of normalised header names (all three projects' data layers). · **Option B:** tolerant substring matching for headers a human typed (ATECA, after one unexplained production mismatch). **Decision: A for headers created by code; B only for human-maintained headers, as a hedged pattern** (R-38). · **Sources:** ATECA-20.
 
+
+### D-14 — Bulk saves: sequential queue or one batch call
+- **Option A:** a client queue that calls the single-record save API once per record, in sequence (v0.2.1 convention, MPRO). · **Option B:** one call carrying the whole batch, prepared per item and written once under the lock, returning per-item results and the refreshed data (MPRO, 2026-11-10). **Decision: B by default** — A pays the fixed round-trip cost per record (measured ~38 s for 10 records against ~3.7 s for B). **A only** when each item is a long, independent operation that could push one execution past the 6-minute limit or must report progress item by item (e.g. sending mail or generating a document per record). · **Sources:** MPRO-52, MPRO-56; v0.2.1 arquitectura §Client conventions.
 ---
 
 ## v0.2.1 coverage
@@ -1105,9 +1157,9 @@ R-119's hedge on `@` with booleans was removed in 1.0.1 after D-04 was verified.
 
 ## Coverage stats
 
-- **Rules:** 157 `R-NN` (154 kept or hedged, 3 dropped); 13 `D-NN`.
-- **Per area:** Security and public API 33 · Architecture 40 · Client 28 · Testing 17 · Gotchas 20 · Workflow 16 · Dropped 3.
-- **Top rules:** 20: 14 at 3/3 (R-01, R-06, R-07, R-08, R-23, R-27, R-37, R-40, R-60, R-74, R-77, R-84, R-119, R-128) and 5 at 2/3 (R-22, R-26, R-36, R-55, R-76; R-36, R-55 and R-76 count MPRO through v0.2.1) and 1 stated exception at 1/3 (R-21, security-critical v0.2.1 top rule).
-- **Source entries:** MPRO 50/50, ATECA 52/52, BARRA 45/45 cited at least once.
+- **Rules:** 166 `R-NN` (163 kept or hedged, 3 dropped); 14 `D-NN` (1.1.0 added R-158 to R-166 and D-14).
+- **Per area:** Security and public API 33 · Architecture 40 · Client 28 · Testing 17 · Gotchas 20 · Workflow 16 · Performance 9 · Dropped 3.
+- **Top rules:** 21: 14 at 3/3 (R-01, R-06, R-07, R-08, R-23, R-27, R-37, R-40, R-60, R-74, R-77, R-84, R-119, R-128) and 5 at 2/3 (R-22, R-26, R-36, R-55, R-76; R-36, R-55 and R-76 count MPRO through v0.2.1) and 2 stated exceptions at 1/3 (R-21, security-critical v0.2.1 top rule; R-158, added in 1.1.0 for its measured effect).
+- **Source entries:** MPRO 57/57, ATECA 52/52, BARRA 45/45 cited at least once.
 - **New vs v0.2.1:** MPRO 25 new, 13 partial (only the new part counted as new), 12 already covered; ATECA 15 new, 1 contradicting, 9 partial, 27 already covered; BARRA 30 new, 3 contradicting, 10 partial, 2 already covered.
-- **Hedged rules:** R-33 (ATECA-15), R-38 (ATECA-20), R-100 (BARRA-33), R-101 (BARRA-35), R-120 (BARRA-24 / D-04), R-132 (BARRA-20); none is a top rule.
+- **Hedged rules:** R-33 (ATECA-15), R-38 (ATECA-20), R-100 (BARRA-33), R-101 (BARRA-35), R-120 (BARRA-24 / D-04), R-132 (BARRA-20), R-162 (MPRO-55); none is a top rule.

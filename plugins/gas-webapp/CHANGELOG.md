@@ -1,5 +1,19 @@
 # Changelog — gas-webapp
 
+## 1.1.0 — 2026-11-10
+
+New area: latency. The lessons come from measuring one source app (an assessment platform) before and after cutting its round trips; all of them are 1/3 so far.
+
+- **Round trips** (`references/architecture.md` §Round trips, new section; `SKILL.md` top rule 21). Each `google.script.run` call costs about 1.7 s and each `?page=` navigation about 2.5 s regardless of the server code (measured on a versioned `/exec`), so screens are designed by the number of calls. "Save all" is one batch call: prepare each item in its own `try/catch`, write once under the lock, return per-item results and the refreshed data so no reload call follows (10 rows: ~38 s → ~3.7 s).
+- **Contradiction resolved as a decision.** The 1.0.x client convention "bulk saves run as a sequential queue" (`references/client-sandbox.md` §State and feedback) is now inventory decision D-14: one batch call by default, a sequential queue only for long per-item jobs.
+- **First-load data in the page** (`references/client-sandbox.md` §Templates). The page-serving function injects the responses of the same APIs the client calls on load (only `ok: true` ones, with `null` object properties stripped as `google.script.run` would); the client reads each once and falls back to the call. Dashboard: ~6 s → ~2.9 s. The point about `null` inside arrays stays hedged.
+- **Concurrency** (`references/architecture.md` §Concurrency). Every writer to a sheet that a batch rewrites whole takes the same lock, single-row writers included; inside the lock, read straight from Sheets, because an unlocked reader can put a stale cache entry back after an invalidation.
+- **Input validation** (`references/security-and-api.md` §Input and output). Maps of allowed ids are built with `Object.create(null)`: with `{}`, an id of `toString` passed.
+- **Client** (`references/client-sandbox.md` §State and feedback). If an automatic save before navigating fails as a whole, stay on the screen.
+- **Measuring latency** (`references/testing.md`, new section). An instrumentation branch that is never merged: timed calls and navigations on the client, timed reads and writes and a timing field on the server.
+- **Sources.** `docs/sources/mpro.md` MPRO-51 to MPRO-57; `docs/sources/inventory.md` R-158 to R-166 and D-14 (R-97 points to D-14).
+- **Eval.** New case `case-17-save-all-round-trips`.
+
 ## 1.0.1 — 2026-11-07
 
 Two hedged points verified on a real sheet and template, so their hedges are gone.

@@ -91,6 +91,40 @@ function coded_(code, message) { var e = new Error(message || code); e.code = co
 - Anything injected as text is a string: convert on the server before injecting and again on the client before arithmetic; compare booleans explicitly (`=== true`).
 - Public pages: compute everything in one serialisable function and inject it in the same pass (`references/security-and-api.md` §Public pages).
 
+## Round trips
+
+Latency in a GAS web app is mostly a fixed cost per round trip, not your code. Measured in one app (identity model B, `/exec`): ~1.7 s per `google.script.run` call (1.2–2.0 s) while the server code ran 40–170 ms, and ~2.5 s to first byte per `?page=` navigation while `doGet` code ran 0.2–0.7 s. Count calls per user action before optimising anything else; measure with `references/testing.md` §Measuring latency.
+
+- **One call per user action.** A screen that loads, saves or refreshes with several calls pays the fixed cost each time.
+- **Save all = one batch call** (D-14 in the inventory). Split each save into `prepare_(item)` (validate and compute, no write; returns `{action: 'update', id, data}` or `{action: 'append', data}`, or throws) and a writer. The batch API prepares each item in its own `try/catch`, rejects a key repeated in the same batch, writes everything with one `updateRows_` plus one `appendRows_` under the lock (§Concurrency), and returns one result per item:
+
+```javascript
+function saveBatch_(sheet, items, keyOf, prepare) {
+  return withLock_(function () {
+    refreshFromSheets_(sheet);                 // fresh read, see §Concurrency
+    var seen = Object.create(null), preps = [], results = [];
+    items.forEach(function (item) {
+      var r = { id: String(item.id || '') };
+      try {
+        var k = keyOf(item);
+        if (seen[k]) throw new Error('Duplicate item in batch');
+        seen[k] = true;
+        preps.push(prepare(item));
+        r.ok = true;
+      } catch (e) { r.ok = false; r.error = e.message; }
+      results.push(r);
+    });
+    if (preps.length) writePrepared_(sheet, preps);  // one updateRows_ + one appendRows_
+    return results;
+  });
+}
+```
+
+  Single-record writers reuse the same `prepare` function, so the validation exists once. Measured: 10 rows saved and repainted in ~3.7 s instead of ~38 s with a per-row queue.
+- **The save returns what the screen repaints** (the refreshed form and any summary it shows), built with the same internal readers as the read APIs, so the client makes no reload call. Build that part inside a `try/catch` that yields `null`: a failure after the write must not be reported as "nothing saved". Repaint only when no item failed, so rows in error keep what the user typed.
+- **First-load data travels with the page** (`references/client-sandbox.md` §Templates): the page needs no call on load.
+- A read that misses the cache costs 0.4–2 s even for a small sheet, and each `CacheService.get` 15–250 ms; a call that reads ten cached sheets spends a few hundred milliseconds on cache reads alone.
+
 ## Concurrency
 
 The script-lock top rule is in `SKILL.md`. Use one helper:
@@ -107,7 +141,8 @@ function withLock_(fn) {
 
 - Flush before releasing, so the next execution never reads writes Sheets has not applied yet.
 - The lock is **not reentrant**: an inner acquire/release frees the caller's lock mid-section. Document in the helper's header which functions take the lock. Functions needed both inside and outside a lock come in pairs: `xNoLock_` (body) and `x_` (wrapper that takes the lock). If a locked section needs a value from a locking function, get it before entering.
-- Inside the lock, read fresh (bypass the cache for the rows you check).
+- Inside the lock, read fresh (bypass the cache for the rows you check). Invalidating the cache key is not enough: a reader that does not take the lock can put a stale copy back after the invalidation. Read the sheet straight from Sheets and store the rows in the per-execution memo, so the rest of the locked section sees them.
+- **Every writer to a sheet that some path rewrites whole takes the same lock.** A batch `updateRows_` reads the whole range and writes it all back, and `appendRows_` picks its start row with `getLastRow()`; a single-row update that lands between the batch's read and write is lost without an error. Batch and single-record writers to those sheets share one lock helper (one app; found in review before release).
 - **Corrections carry their base value:** the client sends the value it displayed when the edit opened; inside the lock the server compares it with the fresh row and refuses with a dedicated code (e.g. `STALE_VALUE`) if it changed; the client discards its draft and reloads.
 
 ## Bulk operations

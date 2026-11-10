@@ -4,7 +4,7 @@ Reusable GAS + Google Sheets web-app lessons from the MPRO Avaluació project (c
 
 Evidence is given as repo-relative paths or commit hashes in the MPRO repository. "In v0.2.1" refers to the previous `gas-webapp-playbook` (Catalan file names: `SKILL.md`, `seguretat-api.md`, `arquitectura.md`, `sandbox-gas.md`, `gotchas.md`, `flux-de-treball.md`).
 
-Entries are grouped by Area: security (01–16), architecture (17–24), client (25–31), testing (32–39), gotcha (40–44), workflow (45–50).
+Entries are grouped by Area: security (01–16), architecture (17–24), client (25–31), testing (32–39), gotcha (40–44), workflow (45–50), performance (51–57, added 2026-11-10).
 
 ---
 
@@ -429,3 +429,65 @@ Entries are grouped by Area: security (01–16), architecture (17–24), client 
 - **Area:** workflow
 - **Evidence:** `docs/ROADMAP-historial.md` ("Seguretat Fase 2" pendents, "Robustesa de l'enllaç personal"); `Auth.gs` (`enviarMeuEnllac_`)
 - **In v0.2.1:** no
+
+---
+
+## Performance
+
+Measured 2026-11-10 on a versioned `/exec` deployment (Workspace domain, identity model B) with a small demo dataset (10 members, ~130 records), using the instrumentation of MPRO-57. Figures are wall-clock times seen in the browser.
+
+### MPRO-51 — The fixed cost of a round trip dominates, not your code or Sheets
+- **Symptom:** Users perceive the app as slow: ~6 s to open the dashboard, 4–6 s per screen change, 2–4 s to open a form, although the server code is fast.
+- **Cause:** Each `google.script.run` call costs ~1.2–2.0 s end to end (about 1.7 s typical) while the server code runs 40–170 ms; each `?page=` navigation costs ~2.5 s to first byte while `doGet` code runs 0.2–0.7 s. `/dev` and `/exec` measured the same. Platform overhead is 60–85 % of every wait; client rendering is negligible (0–4 ms). A read from Sheets that misses the cache costs 0.4–2 s even for a 4–9 row sheet, and each `CacheService.get` 15–250 ms.
+- **Rule:** Design screens by the number of round trips, not by server cost: one call per user action, no call on page load when the data can travel with the page (MPRO-54). Measure an empty call first; it is the floor no optimisation inside Apps Script removes.
+- **Area:** performance
+- **Evidence:** `docs/ROADMAP.md` (item "agilitat percebuda", tables before/after); branch `mesura-rendiment` (`a9afb51`)
+- **In v0.2.1:** no.
+
+### MPRO-52 — "Save all" is one batch call, not one call per row
+- **Symptom:** Saving 10 edited rows took ~35 s plus a reload, and the screen looked frozen.
+- **Cause:** The client walked a queue calling the single-record save API once per row (and once per row × column in another screen), paying MPRO-51's fixed cost each time; each server call also re-read the whole sheet to find its row. This was the documented convention "bulk saves run as a sequential queue" (v0.2.1).
+- **Rule:** A save-all action sends the whole batch in one call. On the server, split each save into *prepare* (validate and compute, no write; returns `{action: 'update', id, data}` or `{action: 'append', data}`) and *write*; prepare every item in its own `try/catch`, reject a key repeated in the same batch, then write with one `updateRows_` plus one `appendRows_`. Return one result per item (`{id, ok, error?}`) so the client keeps per-row error marking. Single-record writers reuse the same *prepare* function. Measured: 10 rows saved and repainted in ~3.7 s (was ~38 s); one row ~4.1 s (was ~6.5 s).
+- **Area:** performance / architecture
+- **Evidence:** `AvaluacioFunctions.gs` (`_prepararNotaRA_`, `_desarLotNotes_`), `ApiHandler.gs` (`apiGuardarNotesRALot`); commits `d7367ff`, `aed4f34`, `5f2c2fd`, `30c608b`
+- **In v0.2.1:** contradicts (arquitectura §Client conventions, "bulk saves run as a sequential queue").
+
+### MPRO-53 — The save returns the refreshed data; no reload calls after saving
+- **Symptom:** Every save was followed by one or two more calls (form and side-menu summary), adding 2–3 s.
+- **Cause:** The client reloaded its state with separate read calls after the save succeeded.
+- **Rule:** The save API returns what the screen repaints, built with the same internal readers as the read APIs. Build that part inside its own `try/catch` that yields `null`, so a failure after the write is never reported as "nothing saved"; the client skips the repaint on `null`. Repaint the form only when no row failed, so rows in error keep what the user typed.
+- **Area:** performance / client
+- **Evidence:** `ApiHandler.gs` (`_construirRespostaLot_`), `html/eval-ra-scripts.html` (`_erRunSaveQueue`); commits `5f2c2fd`, `94ea606`
+- **In v0.2.1:** no.
+
+### MPRO-54 — First-load data travels inside the page, with a fallback call
+- **Symptom:** Each screen showed "Loading…" for ~2 s after the page itself had taken ~2.5 s to arrive.
+- **Cause:** `doGet` served the shell and the client fetched its data with `google.script.run` on load: two round trips per screen.
+- **Rule:** The page-serving function calls the same public `api*` functions the client would call (same guard, same shape) and puts only `ok: true` responses into the injected context (`initialData[key]`); a throw or `{ok:false}` leaves the key absent. The client reads each key once (read, then delete) and falls back to its usual call when the key is absent. The context's existing `<` escaping covers the new data. Measured: dashboard ~6 s → ~2.9 s, no call on load.
+- **Area:** performance / client
+- **Evidence:** `Codigo.gs` (`_afegirDadesInicials_`), `html/Layout.html` (`window._dadesInicials`); commits `ee501c5`, `4892b85`, `7c0967a`
+- **In v0.2.1:** no.
+
+### MPRO-55 — Injected data and `google.script.run` must deliver the same shape
+- **Symptom:** (risk found while designing MPRO-54) the same value could arrive as `x: null` through the template and with `x` absent through `google.script.run`, so `=== undefined` checks would behave differently by path.
+- **Cause:** `google.script.run` drops object properties whose value is `null` (skill `references/gotchas.md` B5, C2; v0.2.1 gotchas); `JSON.stringify` into the template keeps them.
+- **Rule:** Pass injected API responses through a deep copy that removes `null`/`undefined` object properties, leaving arrays as they are, and apply it only to that data: other context fields may rely on keeping `null`. Hedged: an injected response and a fetched one were compared and matched, but that data held no `null` inside arrays, so what `google.script.run` does there was not observed.
+- **Area:** client
+- **Evidence:** `Codigo.gs` (`_senseNullsComGoogleScriptRun_`), `tests/dades-inicials.test.js`
+- **In v0.2.1:** partial (gotchas: `null` dropped in transit) — the parity rule is new.
+
+### MPRO-56 — Whole-sheet writers need the lock, and so does every writer to the same sheet
+- **Symptom:** (found in review before release) two users saving at once could silently lose one user's changes, or a batch could append a duplicate of a record another execution had just created.
+- **Cause:** `updateRows_` reads the whole sheet and writes it all back, and `appendRows_` takes its start row from `getLastRow()`; a single-row update landing between a batch's read and write is overwritten. Invalidating the cache inside the lock was not enough: an unlocked reader could put a stale copy back afterwards and the batch read it. ID-validation maps built as `{}` accepted `'toString'` as an id and wrote a row for it.
+- **Rule:** One helper takes the script lock (`waitLock`, readable busy error, release in `finally`, never re-entered) around every write to those sheets, batch and single-row alike. Inside the lock, read the sheets you prepare from straight from Sheets, skipping `CacheService`, and keep the result in the per-execution memo. Build lookup maps of allowed ids with `Object.create(null)` or check them with `hasOwnProperty`. If an automatic save that runs before navigating fails as a whole, stay on the screen: navigating would discard what the user typed.
+- **Area:** architecture / security
+- **Evidence:** `AvaluacioFunctions.gs` (`_ambBloqueigNotes_`), `DataAccess.gs` (`_refrescarFullDesDeSheets_`), `html/eval-ra-scripts.html` (`_erOnNavClick`); commits `1724bde`, `94ea606`
+- **In v0.2.1:** partial (lock discipline) — the whole-sheet writer race, the stale cache after invalidation and the prototype-key bypass are new.
+
+### MPRO-57 — A measurement branch that is never merged
+- **Symptom:** Guesses about "the spreadsheet is slow" pointed at the wrong layer.
+- **Cause:** From the browser, platform overhead, Sheets reads and server code look the same.
+- **Rule:** Keep an instrumentation branch: a client wrapper around `google.script.run` that times each call (response and render) and each click-to-ready navigation, with an on-screen report and an empty-call "ping"; server timers on every sheet read (cache or Sheets, rows, ms) and every write; and a timing field added to every API response so the client can subtract server time from round-trip time. Measure on a temporary versioned deployment, delete it afterwards and push the main branch back. The timing field reveals which sheets the server reads, so it must never reach the main branch; a test that requires an identical response fails on purpose in that branch.
+- **Area:** testing / workflow
+- **Evidence:** branch `mesura-rendiment` (`Perf.gs`, `html/perf-client.html`); `docs/ROADMAP.md` ("Per tornar a mesurar")
+- **In v0.2.1:** no.

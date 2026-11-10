@@ -124,6 +124,14 @@ Object.defineProperty(fakeScript, 'run', { get() {
 
 **Local preview server.** A Node script renders any page mode from an in-memory scenario as `doGet` would and writes it to a folder; its "live" fake responses inject the code of the pure `.gs` functions (validation, previews) instead of re-implementing them, with a test that they match. Serve the folder on the LAN to open it on a phone. Reuse the same scenario module in the jsdom harness. Device validation: `references/workflow.md` §QA and debugging.
 
+## Measuring latency
+
+Before optimising speed, measure which layer the time goes to (one app; `references/architecture.md` §Round trips). Keep the instrumentation on a branch that is never merged:
+- **Client:** a wrapper around `google.script.run` (a `Proxy` like the model B client in `references/client-sandbox.md`) that times each call from invocation to handler (round trip) and the handler itself (render), records click → screen ready across navigations in `localStorage`, and offers an on-screen report plus a "ping" button that makes N sequential calls to the cheapest API (the fixed cost per call).
+- **Server:** timers on every sheet read (cache or Sheets, rows, ms) and every write in the data layer, and a timing field added to every API response by the shared `ok_`/`fail_` wrapper, so round trip minus server time gives the platform overhead.
+- Measure on a temporary **versioned** deployment as well as `/dev`, with realistic data; delete the deployment afterwards and push the main branch back.
+- The timing field reveals which sheets the server reads: it must never reach the main branch. A test that requires an identical response (an unauthenticated endpoint) failing in that branch is the guard.
+
 ## Before every push
 
 Run, in this order, and push only when all pass:

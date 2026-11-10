@@ -1,6 +1,6 @@
 ---
 name: gas-webapp-playbook
-description: Use when starting, designing, reviewing or debugging a Google Apps Script web app that uses Google Sheets as its database (HtmlService pages, google.script.run, clasp, container-bound script) — bootstrapping a project and its CLAUDE.md, choosing the identity model (domain session or personal ?t= links under execute-as-deployer), adding or reviewing any server function the browser can call, protecting setup against being re-run, sending email or creating triggers, writing Node tests with a vm harness, or hitting an unexplained symptom such as a blank page, a 403 on navigation, "res is null", a SyntaxError only inside the GAS iframe, clasp push printing "Skipping push." or "already up to date" while the app stays old, stale data after editing the sheet, booleans, dates or leading zeros reading back wrong, a number turning into a date in a comma-decimal locale, slow bulk writes, colliding concurrent writes, or a personal-link user losing the session after clicking a link.
+description: Use when starting, designing, reviewing or debugging a Google Apps Script web app that uses Google Sheets as its database (HtmlService pages, google.script.run, clasp, container-bound script) — bootstrapping a project and its CLAUDE.md, choosing the identity model (domain session or personal ?t= links under execute-as-deployer), adding or reviewing any server function the browser can call, protecting setup against being re-run, sending email or creating triggers, writing Node tests with a vm harness, or hitting an unexplained symptom such as a blank page, a 403 on navigation, "res is null", a SyntaxError only inside the GAS iframe, clasp push printing "Skipping push." or "already up to date" while the app stays old, stale data after editing the sheet, booleans, dates or leading zeros reading back wrong, a number turning into a date in a comma-decimal locale, screens or saves that take seconds, slow bulk writes, colliding concurrent writes, or a personal-link user losing the session after clicking a link.
 ---
 
 # GAS web app playbook
@@ -16,8 +16,8 @@ Marks: **(3/3)** confirmed independently in all three apps, **(2/3)** in two. Un
 | Situation | File |
 |---|---|
 | Choosing the identity model; adding or reviewing any server function; links, email, free text, setup | `references/security-and-api.md` (**always** before writing backend code) |
-| File layout, data layer, cache, migrations, locks, context, wizards, mail and triggers | `references/architecture.md` |
-| Node test harness, public-surface test, static checks on the client | `references/testing.md` |
+| File layout, data layer, cache, migrations, locks, context, wizards, mail and triggers; screens or saves that feel slow (round trips) | `references/architecture.md` |
+| Node test harness, public-surface test, static checks on the client, measuring latency | `references/testing.md` |
 | Writing or reviewing client JS/HTML (iframe parser, templates, navigation, model B client, mobile) | `references/client-sandbox.md` (before writing, not after) |
 | A symptom you cannot explain | `references/gotchas.md` (symptom index at the top) |
 | Planning a feature, worktrees, subagents, QA, deployment guides, closing a branch | `references/workflow.md` |
@@ -47,6 +47,7 @@ Read only the file the task needs.
 18. **Capture `/exec` in `doGet`; navigate only through `<a>` (3/3).** Store the deployment URL in a script property only when it ends in `/exec` and use that value for `<base href="…" target="_top">`, emails, menus and triggers (`getUrl()` is wrong outside a web request, and was seen returning `/dev` inside one). Navigate from JS only with a real or synthetic `<a>` click, never `window.location` (403 in the iframe, and it drops a personal token).
 19. **Handle every `google.script.run` response defensively (3/3).** Check `!res || !res.ok`; `null` properties are dropped in transit (use `''`); `Date`, classes, `undefined` and functions do not serialise; every failure handler shows a translated fallback when `e.message` is empty and restores the loading placeholder.
 20. **`clasp push --force`, from a verified directory, then redeploy (3/3).** A non-interactive push silently skips everything when it would ask about `appsscript.json`; every checkout and worktree shares the `scriptId`, so check `pwd`, branch and `.clasp.json` first; `/exec` stays on its version until `clasp deploy -i <deploymentId>` — redeploy and `curl -sL` the URL before asking anyone to test (a sign-in page means access is restricted).
+21. **Count round trips, not milliseconds of code** (1/3 — kept as a top rule for its measured effect). Each `google.script.run` call costs about 1.7 s and each page navigation about 2.5 s whatever the server does: one call per user action, "save all" in one batch call that returns the refreshed data, and first-load data injected into the page context (`references/architecture.md` §Round trips).
 
 ## Starting a new project
 
