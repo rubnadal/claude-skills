@@ -58,7 +58,7 @@ Read only the file the task needs.
    - Whether the script in `.clasp.json` is a test or a production script.
    - Git preferences: worktrees or `main`, who commits, who pushes.
 2. **Project `CLAUDE.md`:** start from `templates/CLAUDE.template.md` and fill the gaps with the user.
-3. **`.claspignore`:** start from `templates/claspignore.template` before the first push (`clasp push` never deletes remote files).
+3. **`.claspignore`:** start from `templates/claspignore.template` before the first push. A push uploads every file not ignored, and a stray remote file goes away only with a push that actually uploads something (`references/gotchas.md` A4).
 4. **`appsscript.json`:** start from `templates/appsscript.model-a.json` or `templates/appsscript.model-b.json` — V8 runtime, explicit `oauthScopes` from day one, `executeAs`/`access` matching the chosen model.
 5. **Public-surface test from the first commit:** copy `templates/public-surface.test.js` and fill its classification lists (`references/testing.md`).
 6. **Build order that worked:** data layer + auth + setup → pure logic with tests → public functions → layout, i18n and one screen → the rest, one feature per branch.

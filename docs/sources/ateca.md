@@ -426,6 +426,14 @@ Sources read: `CLAUDE.md`; `docs/tech/*.md`; `docs/superpowers/specs/2026-10-07-
 - **Evidence:** docs/tech/migracions.md ("Forçar una re-execució manual", "Resetar la versió manualment"), cbf72d8
 - **In v0.2.1:** yes (seguretat-api.md§1 already says the trailing `_` hides a function from the Run menu; only "grep the docs and snippets after a rename" is new)
 
+### ATECA-53 — A real push from the main branch removes branch-only remote files
+- **Symptom:** After measuring latency from an instrumentation branch (two extra files, a server `.gs` and a client `.html`), `clasp push --force` from the main branch listed 27 files instead of 29; a `clasp pull` into a temporary folder showed the two files gone and the remote identical to the main branch.
+- **Cause:** The push uploaded changed files, so clasp replaced the whole project with the local file set; files that existed only on the other branch were removed. This is the other side of MPRO-42 (nothing is replaced while every uploaded file matches).
+- **Rule:** Do not rely on "`clasp push` never deletes remote files": a push that uploads anything replaces the project. After cleaning up an instrumentation or experiment branch, verify with a temporary `clasp pull` that the remote matches the main branch.
+- **Area:** gotcha
+- **Evidence:** author notes (2026-11-16), clasp 3.4.1; the instrumentation branch is local and never merged
+- **In v0.2.1:** no
+
 ---
 
 ## Workflow

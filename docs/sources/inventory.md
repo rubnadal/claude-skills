@@ -671,9 +671,9 @@ Areas: Security and public API · Architecture · Client · Testing · Gotchas �
 - **Confirmed:** 3/3 (ATECA-49, BARRA-28, MPRO-42; v0.2.1 gotchas A2/A4/D3c)
 - **Destination:** SKILL.md (top rule)
 
-### R-129 — `clasp push` never deletes remote files
-- **Rule:** Files excluded or deleted locally survive remotely and `--force` says "already up to date"; diagnose with `clasp pull` into a temp folder, make one remote file differ, then push from the repo; exclude every tool output folder (and every `.html` you do not ship) in `.claspignore` before the first push.
-- **Confirmed:** 1/3 (MPRO-42)
+### R-129 — A push replaces the whole project, or uploads nothing
+- **Rule:** Files excluded or deleted locally survive remotely while every uploaded file already matches (`--force` says "already up to date"); a push that uploads anything replaces the whole project and removes them. Diagnose with `clasp pull` into a temp folder, make one remote file differ, then push from the repo; exclude every tool output folder (and every `.html` you do not ship) in `.claspignore` before the first push; after cleaning up a branch whose files exist only there, verify the remote with a temporary pull.
+- **Confirmed:** 2/3 (MPRO-42, ATECA-53)
 - **Destination:** references/gotchas.md §clasp
 
 ### R-130 — clasp account, logs and deployment ids
@@ -1160,6 +1160,6 @@ R-119's hedge on `@` with booleans was removed in 1.0.1 after D-04 was verified.
 - **Rules:** 166 `R-NN` (163 kept or hedged, 3 dropped); 14 `D-NN` (1.1.0 added R-158 to R-166 and D-14).
 - **Per area:** Security and public API 33 · Architecture 40 · Client 28 · Testing 17 · Gotchas 20 · Workflow 16 · Performance 9 · Dropped 3.
 - **Top rules:** 21: 14 at 3/3 (R-01, R-06, R-07, R-08, R-23, R-27, R-37, R-40, R-60, R-74, R-77, R-84, R-119, R-128) and 5 at 2/3 (R-22, R-26, R-36, R-55, R-76; R-36, R-55 and R-76 count MPRO through v0.2.1) and 2 stated exceptions at 1/3 (R-21, security-critical v0.2.1 top rule; R-158, added in 1.1.0 for its measured effect).
-- **Source entries:** MPRO 57/57, ATECA 52/52, BARRA 45/45 cited at least once.
-- **New vs v0.2.1:** MPRO 25 new, 13 partial (only the new part counted as new), 12 already covered; ATECA 15 new, 1 contradicting, 9 partial, 27 already covered; BARRA 30 new, 3 contradicting, 10 partial, 2 already covered.
+- **Source entries:** MPRO 57/57, ATECA 53/53, BARRA 45/45 cited at least once.
+- **New vs v0.2.1:** MPRO 25 new, 13 partial (only the new part counted as new), 12 already covered; ATECA 16 new, 1 contradicting, 9 partial, 27 already covered; BARRA 30 new, 3 contradicting, 10 partial, 2 already covered.
 - **Hedged rules:** R-33 (ATECA-15), R-38 (ATECA-20), R-100 (BARRA-33), R-101 (BARRA-35), R-120 (BARRA-24 / D-04), R-132 (BARRA-20), R-162 (MPRO-55); none is a top rule.

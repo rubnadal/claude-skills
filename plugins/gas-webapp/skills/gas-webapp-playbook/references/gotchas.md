@@ -94,7 +94,8 @@ Symptom → cause → fix. Search this file for the exact error text or behaviou
 - **Symptom:** a file added to `.claspignore` (or deleted locally) still appears in the Apps Script editor; `clasp push --force` answers `Script is already up to date.` A tool's generated `.html` shows up as a project file.
 - **Cause:** clasp compares only the files it would upload; if they all match it uploads nothing and never replaces the project. `clasp status` lists only local files. Any `.html` in the tree is uploaded by default.
 - **Fix:** diagnose with `clasp pull` into a temporary folder (copy `.clasp.json` there and make sure its `rootDir` points inside that folder). Make one remote file differ (from the temp folder delete the stray file, add a newline to `appsscript.json`, `clasp push --force`), then push from the repo: a real push replaces the whole project. Verify with another temporary pull. Exclude every tool output folder and every `.html` you do not ship in `.claspignore` before the first push.
-- **Confirmed:** 1/3
+- **The other way round:** a file that exists only on another branch (instrumentation, an experiment) disappears from the remote with the next real push from the main branch. After cleaning up such a branch, verify with a temporary `clasp pull` that the remote matches the main branch.
+- **Confirmed:** 2/3
 
 **A5 — "The caller does not have permission"**
 - **Symptom:** `clasp push` fails with `The caller does not have permission`.
