@@ -213,6 +213,7 @@ google.script.run
 
 - Ask which domains the target network blocks (school and corporate filters block generic CDNs).
 - Serve libraries from a host you control as an external `<script src>`; never inline a large bundle (§Syntax).
+- Some libraries fetch their assets at runtime from their own domain: an icon web component such as `<iconify-icon>` asks the provider's API for every icon. Add that domain to the list to confirm with the network, or serve the icon set from a host you control (hedged: inferred, not observed). An unknown icon name renders empty with no error: `references/gotchas.md` E11.
 - Generate images such as QR codes on the server with `UrlFetchApp` and return a `data:` URI (`'data:image/png;base64,' + Utilities.base64Encode(blob.getBytes())`). In emails a direct image URL works, because the mail client fetches it through its own proxy. The Google Charts QR endpoint is retired (404).
 
 ## Mobile

@@ -58,6 +58,7 @@ Symptom → cause → fix. Search this file for the exact error text or behaviou
 | `Can't remove the last paragraph in the section` | E8 |
 | Every exported PDF has the first document's content; Docs creation quota exhausted | E9 |
 | QR code returns 404 or does not load on the target network | E10 |
+| An icon renders empty (the button and its tooltip are there, no glyph), with no console error | E11 |
 | `node --check File.gs` rejects the file | F1 |
 | `assert.deepStrictEqual` fails on identical-looking objects; `instanceof Date` is false in tests | F2 |
 | A code graph or linter shows no `.gs` files or no cross-file calls | F3 |
@@ -401,6 +402,12 @@ Symptom → cause → fix. Search this file for the exact error text or behaviou
 - **Cause:** the Google Charts QR endpoint is retired; filters block third-party domains.
 - **Fix:** generate on the server and return a `data:` URI (`references/client-sandbox.md §Assets and networks`).
 - **Confirmed:** 2/3
+
+**E11 — Blank icons**
+- **Symptom:** an icon renders as nothing: the button keeps its hover style and tooltip but has no glyph, and the console shows no error. Often in controls that appear only on hover, or in rarely chosen entries of an icon picker.
+- **Cause:** an icon web component such as `<iconify-icon>` asks the provider's API for each name; an unknown name (written from memory, e.g. `mdi:link-variant-refresh`) comes back as "not found" and the element stays empty. The component fetches every icon from the provider's domain at runtime, so a network filter that blocks that domain would blank all icons at once (hedged: inferred, not observed).
+- **Fix:** check every icon name in a test (`references/testing.md §Static checks`) and add the icon API domain to the domains to confirm with the network, or serve the icons from a host you control (`references/client-sandbox.md §Assets and networks`).
+- **Confirmed:** 1/3
 
 ## F. Tooling and tests
 

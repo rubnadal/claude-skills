@@ -434,6 +434,14 @@ Sources read: `CLAUDE.md`; `docs/tech/*.md`; `docs/superpowers/specs/2026-10-07-
 - **Evidence:** author notes (2026-11-16), clasp 3.4.1; the instrumentation branch is local and never merged
 - **In v0.2.1:** no
 
+### ATECA-54 — An icon name that does not exist renders as nothing, with no error
+- **Symptom:** An admin row action ("regenerate access link") showed its hover background and tooltip but no glyph. Nothing in the console. A sweep of the 220 icon names in the client found four more that render empty (a banner icon, a form-field icon, two entries in the icon picker).
+- **Cause:** The `<iconify-icon>` web component asks the icon API for each name; an unknown name (`mdi:link-variant-refresh`, `carbon:plant`) comes back as "not found" and the element stays empty without throwing. The names had been written from memory and never rendered by anyone, because the buttons only appear on hover and the picker entries are rarely chosen. The same component fetches every icon at runtime from the provider's API domain, so a network filter that blocks that domain would blank every icon at once (inferred, not observed: the school filter did not block it).
+- **Rule:** Check every icon name against the provider in a test (collect `prefix:name` from the client sources, query the provider's API per collection, fail on any "not found"; skip when offline). Add the icon API domain to the list of domains to confirm with the target network, or serve the icon set from a host you control.
+- **Area:** gotcha
+- **Evidence:** `tests/icones.test.js`; author notes (2026-11-18)
+- **In v0.2.1:** no
+
 ---
 
 ## Workflow

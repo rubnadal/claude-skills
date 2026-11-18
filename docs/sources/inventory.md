@@ -721,6 +721,11 @@ Areas: Security and public API · Architecture · Client · Testing · Gotchas �
 - **Confirmed:** 1/3 (v0.2.1 gotchas B6, MPRO)
 - **Destination:** references/gotchas.md §Sheets as a database
 
+### R-167 — Check icon names in a test; the icon API is a network dependency
+- **Rule:** An icon web component that does not know a name renders nothing and logs nothing, so check every `prefix:name` used by the client against the provider's API in a test (skip when offline). The component fetches icons at runtime from the provider's domain: add that domain to the list to confirm with the target network (R-99), or serve the icon set from a host you control. The network part is hedged (inferred, not observed).
+- **Confirmed:** 1/3 (ATECA-54)
+- **Destination:** references/gotchas.md §Email, triggers and documents (E11); references/client-sandbox.md §Assets and networks; references/testing.md §Static checks
+
 ---
 
 ## Workflow
@@ -1157,9 +1162,9 @@ R-119's hedge on `@` with booleans was removed in 1.0.1 after D-04 was verified.
 
 ## Coverage stats
 
-- **Rules:** 166 `R-NN` (163 kept or hedged, 3 dropped); 14 `D-NN` (1.1.0 added R-158 to R-166 and D-14).
-- **Per area:** Security and public API 33 · Architecture 40 · Client 28 · Testing 17 · Gotchas 20 · Workflow 16 · Performance 9 · Dropped 3.
+- **Rules:** 167 `R-NN` (164 kept or hedged, 3 dropped); 14 `D-NN` (1.1.0 added R-158 to R-166 and D-14; 1.1.1 added R-167).
+- **Per area:** Security and public API 33 · Architecture 40 · Client 28 · Testing 17 · Gotchas 21 · Workflow 16 · Performance 9 · Dropped 3.
 - **Top rules:** 21: 14 at 3/3 (R-01, R-06, R-07, R-08, R-23, R-27, R-37, R-40, R-60, R-74, R-77, R-84, R-119, R-128) and 5 at 2/3 (R-22, R-26, R-36, R-55, R-76; R-36, R-55 and R-76 count MPRO through v0.2.1) and 2 stated exceptions at 1/3 (R-21, security-critical v0.2.1 top rule; R-158, added in 1.1.0 for its measured effect).
-- **Source entries:** MPRO 57/57, ATECA 53/53, BARRA 45/45 cited at least once.
+- **Source entries:** MPRO 57/57, ATECA 54/54, BARRA 45/45 cited at least once.
 - **New vs v0.2.1:** MPRO 25 new, 13 partial (only the new part counted as new), 12 already covered; ATECA 16 new, 1 contradicting, 9 partial, 27 already covered; BARRA 30 new, 3 contradicting, 10 partial, 2 already covered.
-- **Hedged rules:** R-33 (ATECA-15), R-38 (ATECA-20), R-100 (BARRA-33), R-101 (BARRA-35), R-120 (BARRA-24 / D-04), R-132 (BARRA-20), R-162 (MPRO-55); none is a top rule.
+- **Hedged rules:** R-33 (ATECA-15), R-38 (ATECA-20), R-100 (BARRA-33), R-101 (BARRA-35), R-120 (BARRA-24 / D-04), R-132 (BARRA-20), R-162 (MPRO-55), R-167 (ATECA-54, network part only); none is a top rule.

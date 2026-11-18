@@ -98,6 +98,8 @@ Only `SyntaxError` counts: runtime errors for missing GAS globals are expected, 
 
 **i18n.** Every dictionary has the same key set with no empty values; every key used in views exists; every error code that can reach the client has a message in every language, plus a network-error key.
 
+**Icon names.** When the client uses an icon web component that loads icons by name (`<iconify-icon icon="mdi:…">`), collect every `prefix:name` from the client sources, query the provider's API once per collection (Iconify: `https://api.iconify.design/<prefix>.json?icons=a,b,c` lists unknown names in `not_found`) and fail on any of them; skip the test, without failing, when the network is unavailable. An unknown name renders empty with no error (`references/gotchas.md` E11).
+
 **Tooling blind spots.** Before trusting a code graph, linter or static-analysis tool on a GAS repo, check that it parses `.gs` files and resolves cross-file calls (all files share one scope, with no imports).
 
 ## Client tests
