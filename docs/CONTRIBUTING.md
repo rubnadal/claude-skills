@@ -55,6 +55,18 @@ node --test tools/test/*.test.mjs                  # tests of the gate tools the
 
 The full gate needs `claude` and `skillspector` installed and logged in, and it costs money: `EVAL_RUNS` (default 2), `EVAL_MAX_COST` (default 25 USD) and `EVAL_JUDGE` (judge model, default `sonnet`) control it. It passes when skillspector reports no HIGH/CRITICAL finding and no CAUTION recommendation, every critical eval scores 1, the overall score is at least 0.8 and the mean delta against no plugin is positive. On success it writes `docs/validation/<plugin>-<version>.md`. There is no CI: the gate is run locally before every release.
 
+### Acceptance test
+
+The gate checks short, separate questions. An acceptance test checks a whole job. Two fresh `claude -p` agents, one with the plugin and one without, build the same small app from the same brief, each in an empty folder outside the repo. Each result is then checked by hand against a list of the skill's rules, citing file and line, and the session transcript shows whether the skill was invoked. The report goes to `docs/validation/<plugin>-<version>-acceptance.md`. It is not part of the gate: it is run by hand and costs about 2 USD plus the manual review. For an example, see `docs/validation/gas-webapp-1.0.0-acceptance.md`.
+
+Run one in these cases:
+
+- **The first release of a plugin.**
+- **A change to the skill's structure:** a major version, a reorganised `SKILL.md`, or rules merged or removed. The question is whether the rules as a whole still produce a correct project, which separate eval cases cannot show.
+- **A new area that changes how a whole project is built.** Write a new brief that makes the agent use that area, and add its rules to the checklist. Repeating an old brief that never touches the area proves nothing.
+
+Do not run one for a gotcha, a correction or a wording change: the eval cases and the activation check already cover those. For example, gas-webapp 1.1.0 (latency) did not repeat the 1.0.0 test, because that brief has no bulk save or heavy first load and `case-17` covers the new rules. A later acceptance test for that area would need a brief with a multi-row "save all" screen.
+
 Use semver: patch for a new gotcha or a correction, minor for a new file or section, major for a rule that contradicts an earlier version. To release, bump `version` in `plugin.json`, add the `CHANGELOG.md` entry, run the full gate, commit, then tag:
 
 ```bash
