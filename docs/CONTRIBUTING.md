@@ -1,6 +1,6 @@
 # Contributing
 
-This repository is a Claude Code plugin marketplace (`claude-skills`). Each plugin lives in `plugins/<plugin>/` and is released only after it passes the validation gate in `tools/validate.sh`. Contributions are welcome as issues or merge requests on GitLab.
+This repository is a Claude Code plugin marketplace (`claude-skills`). Each plugin lives in `plugins/<plugin>/` and is released only after it passes the validation gate in `tools/validate.sh`. Contributions are welcome as issues or pull requests on GitHub.
 
 ## What a lesson looks like
 

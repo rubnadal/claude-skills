@@ -19,11 +19,13 @@ Els informes i la skill són en anglès.
 A Claude Code:
 
 ```
-/plugin marketplace add https://gitlab.com/rnadalb/claude-skills.git
+/plugin marketplace add rubnadal/claude-skills
 /plugin install gas-webapp@claude-skills
 ```
 
 Per actualitzar-lo més endavant: `/plugin marketplace update claude-skills`.
+
+El marketplace es va traslladar de GitLab a GitHub el novembre del 2026 (1.1.2). Si l'havies afegit des de `gitlab.com/rnadalb/claude-skills`, executa `/plugin marketplace remove claude-skills` i torna'l a afegir amb l'ordre de dalt.
 
 **Instal·lació manual.** Les skills segueixen el format estàndard `SKILL.md`, de manera que també es pot copiar la carpeta de la skill a mà: copieu `plugins/gas-webapp/skills/gas-webapp-playbook/` a `~/.claude/skills/` (o a la carpeta de skills d'un altre agent compatible amb el format). Per actualitzar-la, torneu-la a copiar.
 

@@ -26,7 +26,7 @@ Alhora, crear un repositori exclusiu per anar publicant aquesta i futures skills
 | Decisió | Triat | Descartat i per què |
 |---|---|---|
 | Públic | Comunitat global; skill en anglès, README en anglès i català | Només català: arribaria a molt menys públic; els models segueixen igual una skill en anglès |
-| Allotjament | GitLab públic (`gitlab.com/rnadalb/claude-skills`) | GitHub: es planteja més endavant dins una migració global de l'autor |
+| Allotjament | GitLab públic (`gitlab.com/rnadalb/claude-skills`). **Canviat el 2026-11-19 (1.1.2):** GitHub públic (`github.com/rubnadal/claude-skills`), dins la migració global de l'autor; GitLab queda arxivat | GitHub (inicialment): es plantejava més endavant |
 | Validació | Escenaris automàtics + prova d'acceptació + skillspector | Una sola d'elles deixa forats (regressions, casos no previstos, seguretat) |
 | Llindar skillspector | Estricte: cap HIGH/CRITICAL, recomanació final no CAUTION; baseline amb justificació per entrada | Zero troballes: obligaria a treure referències legítimes; informatiu: no garanteix res |
 | Peces existents | Substitució del repo antic, sense tocar els tres projectes | Tocar-los ara faria el projecte més gran i arriscat; dues versions vives es desincronitzarien |

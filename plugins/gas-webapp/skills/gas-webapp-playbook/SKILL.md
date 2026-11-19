@@ -70,4 +70,4 @@ Not a general JavaScript or Google API guide. For business-logic bugs, debug nor
 
 ## Keeping this skill current
 
-The skill lives in https://gitlab.com/rnadalb/claude-skills. When a project uncovers a new gotcha or contradicts a rule here, propose an update to the user with four parts: **symptom**, **cause**, **rule**, and **origin** (which kind of app, and whether it was observed or inferred). A contradiction becomes an explicit decision, never a silent overwrite.
+The skill lives in https://github.com/rubnadal/claude-skills. When a project uncovers a new gotcha or contradicts a rule here, propose an update to the user with four parts: **symptom**, **cause**, **rule**, and **origin** (which kind of app, and whether it was observed or inferred). A contradiction becomes an explicit decision, never a silent overwrite.

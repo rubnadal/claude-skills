@@ -1,5 +1,12 @@
 # Changelog — gas-webapp
 
+## Unreleased (1.1.2)
+
+The repository moved from GitLab to GitHub; no rule changed.
+
+- **Repository URL** (`SKILL.md` "Keeping this skill current"; `plugin.json` `author`, `homepage` and `repository`; `.claude-plugin/marketplace.json` `owner`). Now `https://github.com/rubnadal/claude-skills`. The READMEs install with `/plugin marketplace add rubnadal/claude-skills` and tell users who added the marketplace from GitLab to remove it and add it again.
+- **Eval.** No case: the change touches no behaviour.
+
 ## 1.1.1 — 2026-11-19
 
 One correction, from a second source app, and one new gotcha.

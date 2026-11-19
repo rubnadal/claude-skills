@@ -1,7 +1,7 @@
 {
   "name": "claude-skills",
   "description": "Validated Claude Code skills distilled from real projects.",
-  "owner": { "name": "Rubén Nadal", "url": "https://gitlab.com/rnadalb" },
+  "owner": { "name": "Rubén Nadal", "url": "https://github.com/rubnadal" },
   "plugins": [
     {
       "name": "gas-webapp",

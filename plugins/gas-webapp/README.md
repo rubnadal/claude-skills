@@ -11,7 +11,7 @@ A Claude Code plugin with one skill, `gas-webapp-playbook`: a playbook for Googl
 ## Install
 
 ```
-/plugin marketplace add https://gitlab.com/rnadalb/claude-skills.git
+/plugin marketplace add rubnadal/claude-skills
 /plugin install gas-webapp@claude-skills
 ```
 

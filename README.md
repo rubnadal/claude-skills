@@ -17,11 +17,13 @@ The `gas-webapp` knowledge comes from three real apps by the author: an assessme
 In Claude Code:
 
 ```
-/plugin marketplace add https://gitlab.com/rnadalb/claude-skills.git
+/plugin marketplace add rubnadal/claude-skills
 /plugin install gas-webapp@claude-skills
 ```
 
 Update later with `/plugin marketplace update claude-skills`.
+
+The marketplace moved from GitLab to GitHub in November 2026 (1.1.2). If you added it from `gitlab.com/rnadalb/claude-skills`, run `/plugin marketplace remove claude-skills` and add it again with the command above.
 
 **Manual install.** Skills follow the standard `SKILL.md` format, so you can also copy the skill folder by hand: copy `plugins/gas-webapp/skills/gas-webapp-playbook/` into `~/.claude/skills/` (or into the skills folder of another agent that supports the format). You then update it by copying again.
 
