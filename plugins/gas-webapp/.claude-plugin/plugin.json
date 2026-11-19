@@ -1,6 +1,6 @@
 {
   "name": "gas-webapp",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Playbook for Google Apps Script web apps backed by Google Sheets: security, architecture, client sandbox, testing and gotchas.",
   "author": { "name": "Rubén Nadal", "url": "https://gitlab.com/rnadalb" },
   "homepage": "https://gitlab.com/rnadalb/claude-skills",

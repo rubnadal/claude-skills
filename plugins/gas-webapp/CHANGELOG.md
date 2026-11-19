@@ -1,12 +1,13 @@
 # Changelog — gas-webapp
 
-## Unreleased (1.1.1)
+## 1.1.1 — 2026-11-19
 
 One correction, from a second source app, and one new gotcha.
 
 - **`clasp push` and stray remote files** (`SKILL.md` "Starting a new project" step 3; `references/gotchas.md` A4). `SKILL.md` said "`clasp push` never deletes remote files", which contradicted A4: a push that uploads anything replaces the whole project, and stray remote files survive only while every uploaded file already matches. Step 3 now says so and points to A4; A4 adds the other direction (files that exist only on another branch disappear with the next real push from the main branch, so verify with a temporary `clasp pull`) and goes from 1/3 to 2/3.
 - **Blank icons** (`references/gotchas.md` E11, new; `references/client-sandbox.md` §Assets and networks; `references/testing.md` §Static checks). An icon web component such as `<iconify-icon>` renders an unknown name as nothing, with no console error; check every icon name against the provider's API in a test that skips when offline. The component also fetches icons at runtime from the provider's domain, which belongs on the list of domains to confirm with the network (hedged: inferred, not observed). 1/3.
 - **Sources.** `docs/sources/ateca.md` ATECA-53 and ATECA-54; `docs/sources/inventory.md` R-129 retitled and now 2/3 (MPRO-42, ATECA-53), new R-167 (ATECA-54).
+- **Eval.** No new case: a blank icon with no error would likely pass without the plugin too (delta 0), and the `clasp push` correction is already covered by `case-11-skipping-push`.
 
 ## 1.1.0 — 2026-11-10
 
