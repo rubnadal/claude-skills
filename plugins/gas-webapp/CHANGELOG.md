@@ -1,6 +1,6 @@
 # Changelog — gas-webapp
 
-## Unreleased (1.1.2)
+## 1.1.2 — 2026-11-19
 
 The repository moved from GitLab to GitHub; no rule changed.
 
